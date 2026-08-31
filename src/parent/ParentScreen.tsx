@@ -4,6 +4,8 @@ import { currentLedger, updateSettings } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
 import type { AppData, AppSettings } from '../domain/types'
 import { createPin, validPin } from '../security/pin'
+import { SKILLS } from '../curriculum/skills'
+import { masteryLabel } from '../learning/selector'
 import { ArrowLeftIcon, CheckIcon, GiftIcon, SettingsIcon } from '../components/Icons'
 import { Toggle } from '../components/Toggle'
 import { ParentGate } from './ParentGate'
@@ -24,9 +26,11 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
   const [pinMessage, setPinMessage] = useState<string | null>(null)
   const dateKey = zurichDateKey()
   const ledger = currentLedger(data, dateKey)
-  const todaysAttempts = useMemo(
-    () => data.attempts.filter((attempt) => attempt.dateKey === dateKey),
-    [data.attempts, dateKey],
+  const roundAttempts = useMemo(
+    () => data.attempts.filter(
+      (attempt) => attempt.dateKey === dateKey && attempt.round === ledger.round,
+    ),
+    [data.attempts, dateKey, ledger.round],
   )
 
   useEffect(() => setSettings(data.settings), [data.settings])
@@ -76,8 +80,8 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
     setPinMessage('PIN geändert.')
   }
 
-  const firstTry = todaysAttempts.filter((attempt) => attempt.wrongAnswers === 0).length
-  const hints = todaysAttempts.filter((attempt) => attempt.hintUsed).length
+  const firstTry = roundAttempts.filter((attempt) => attempt.wrongAnswers === 0).length
+  const reachedGoal = ledger.points >= data.settings.pointsGoal
 
   return (
     <main className="parent-shell">
@@ -91,15 +95,43 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
         <section className="parent-panel parent-panel--summary">
           <div className="section-heading">
             <div><p className="eyebrow">Heute</p><h2>Kurzer Überblick</h2></div>
-            <span className={ledger.redeemedAt ? 'status-chip status-chip--done' : 'status-chip'}>
-              {ledger.redeemedAt ? 'Belohnung eingelöst' : 'Belohnung offen'}
+            <span className={ledger.redemptions.length ? 'status-chip status-chip--done' : 'status-chip'}>
+              {reachedGoal
+                ? 'Belohnung bereit'
+                : ledger.redemptions.length
+                  ? `${ledger.redemptions.length}× eingelöst`
+                  : 'Belohnung offen'}
             </span>
           </div>
           <div className="stat-grid">
-            <div><strong>{ledger.points}</strong><span>Punkte</span></div>
-            <div><strong>{todaysAttempts.length}</strong><span>Aufgaben</span></div>
-            <div><strong>{todaysAttempts.length ? Math.round((firstTry / todaysAttempts.length) * 100) : 0}%</strong><span>direkt gelöst</span></div>
-            <div><strong>{hints}</strong><span>mit Hilfe</span></div>
+            <div><strong>{ledger.points}</strong><span>Punkte dieser Runde</span></div>
+            <div><strong>{roundAttempts.length}</strong><span>Aufgaben dieser Runde</span></div>
+            <div><strong>{roundAttempts.length ? Math.round((firstTry / roundAttempts.length) * 100) : 0}%</strong><span>direkt gelöst</span></div>
+            <div><strong>{ledger.redemptions.length}</strong><span>heute eingelöst</span></div>
+          </div>
+        </section>
+
+        <section className="parent-panel mastery-panel">
+          <div className="section-heading">
+            <div><p className="eyebrow">Lernstand</p><h2>Rechenwege bis 100</h2></div>
+            <span className="status-chip">nur auf diesem Gerät</span>
+          </div>
+          <p className="mastery-intro">Die Balken helfen bei der Auswahl der nächsten Aufgaben. Sie sind keine Schulnoten.</p>
+          <div className="mastery-list">
+            {SKILLS.map((skill) => {
+              const state = data.mastery[skill.id]
+              return (
+                <div className="mastery-row" key={skill.id}>
+                  <div className="mastery-row__labels">
+                    <strong>{skill.label}</strong>
+                    <span>{masteryLabel(state, dateKey)}</span>
+                  </div>
+                  <div className="mastery-track" role="progressbar" aria-label={skill.label} aria-valuemin={0} aria-valuemax={8} aria-valuenow={state.score}>
+                    <span style={{ width: `${(state.score / 8) * 100}%` }} />
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </section>
 

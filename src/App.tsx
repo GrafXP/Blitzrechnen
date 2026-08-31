@@ -47,7 +47,6 @@ export default function App() {
   const dateKey = zurichDateKey()
   const ledger = currentLedger(data, dateKey)
   const reachedGoal = hasReachedGoal(data, dateKey)
-  const finishedForToday = reachedGoal || Boolean(ledger.redeemedAt)
   const appClassName = [
     'app',
     data.settings.highContrast ? 'app--high-contrast' : '',
@@ -68,7 +67,7 @@ export default function App() {
         onDone={() => navigate('/done')}
       />
     )
-  } else if (route === '/done' && finishedForToday) {
+  } else if (route === '/done' && reachedGoal) {
     screen = <DoneScreen data={data} ledger={ledger} dateKey={dateKey} commit={commit} onHome={() => navigate('/')} />
   } else {
     screen = (
@@ -76,7 +75,7 @@ export default function App() {
         data={data}
         ledger={ledger}
         online={online}
-        onStart={() => navigate(finishedForToday ? '/done' : '/mission')}
+        onStart={() => navigate(reachedGoal ? '/done' : '/mission')}
         onParent={() => navigate('/parent')}
         onInstall={() => setInstallOpen(true)}
       />

@@ -1,14 +1,20 @@
 import { zurichDateKey } from './date'
+import { emptyMasteryMap, SKILL_IDS } from '../curriculum/skills'
+import { recordMasteryEvidence } from '../learning/mastery'
 import type {
   AppData,
   AppSettings,
+  ChallengeRepresentation,
   DailyLedger,
+  RewardRedemption,
   SchoolTopic,
+  SkillId,
 } from './types'
 
 export const POINTS_PER_CHALLENGE = 10
 const MAX_LEDGER_HISTORY = 40
 const MAX_ATTEMPT_HISTORY = 500
+const MAX_REDEMPTIONS_PER_DAY = 50
 
 export const DEFAULT_SETTINGS: AppSettings = {
   pointsGoal: 100,
@@ -24,18 +30,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
 export function emptyLedger(dateKey: string): DailyLedger {
   return {
     dateKey,
+    round: 0,
     points: 0,
     awardedChallengeIds: [],
-    redeemedAt: null,
-    redeemedRewardLabel: null,
-    redeemedRewardMinutes: null,
+    redemptions: [],
   }
 }
 
 export function createDefaultData(now = new Date()): AppData {
   const dateKey = zurichDateKey(now)
   return {
-    version: 1,
+    version: 3,
     settings: { ...DEFAULT_SETTINGS },
     security: {
       pinHash: null,
@@ -45,6 +50,7 @@ export function createDefaultData(now = new Date()): AppData {
     },
     ledgers: { [dateKey]: emptyLedger(dateKey) },
     attempts: [],
+    mastery: emptyMasteryMap(),
   }
 }
 
@@ -63,6 +69,8 @@ export function awardResolvedChallenge(
     dateKey: string
     wrongAnswers: number
     hintUsed: boolean
+    skillId?: SkillId
+    representation?: ChallengeRepresentation
     completedAt?: string
   },
 ): AppData {
@@ -75,6 +83,21 @@ export function awardResolvedChallenge(
     awardedChallengeIds: [...ledger.awardedChallengeIds, input.challengeId],
   }
 
+  const completedAt = input.completedAt ?? new Date().toISOString()
+  const nextMastery = input.skillId && input.representation
+    ? {
+        ...data.mastery,
+        [input.skillId]: recordMasteryEvidence(data.mastery[input.skillId], {
+          skillId: input.skillId,
+          representation: input.representation,
+          dateKey: input.dateKey,
+          completedAt,
+          wrongAnswers: input.wrongAnswers,
+          hintUsed: input.hintUsed,
+        }),
+      }
+    : data.mastery
+
   return pruneHistory({
     ...data,
     ledgers: { ...data.ledgers, [input.dateKey]: updatedLedger },
@@ -83,11 +106,15 @@ export function awardResolvedChallenge(
       {
         challengeId: input.challengeId,
         dateKey: input.dateKey,
+        round: ledger.round,
+        skillId: input.skillId ?? null,
+        representation: input.representation ?? null,
         wrongAnswers: Math.max(0, Math.floor(input.wrongAnswers)),
         hintUsed: input.hintUsed,
-        completedAt: input.completedAt ?? new Date().toISOString(),
+        completedAt,
       },
     ],
+    mastery: nextMastery,
   })
 }
 
@@ -97,17 +124,27 @@ export function redeemReward(
   redeemedAt = new Date().toISOString(),
 ): AppData {
   const ledger = currentLedger(data, dateKey)
-  if (ledger.redeemedAt || ledger.points < data.settings.pointsGoal) return data
+  if (ledger.points < data.settings.pointsGoal) return data
+
+  const redemption: RewardRedemption = {
+    id: `${dateKey}:${ledger.round}:${redeemedAt}`,
+    round: ledger.round,
+    points: ledger.points,
+    redeemedAt,
+    rewardLabel: data.settings.rewardLabel,
+    rewardMinutes: data.settings.rewardMinutes,
+  }
 
   return {
     ...data,
     ledgers: {
       ...data.ledgers,
       [dateKey]: {
-        ...ledger,
-        redeemedAt,
-        redeemedRewardLabel: data.settings.rewardLabel,
-        redeemedRewardMinutes: data.settings.rewardMinutes,
+        dateKey,
+        round: ledger.round + 1,
+        points: 0,
+        awardedChallengeIds: [],
+        redemptions: [...ledger.redemptions, redemption].slice(-MAX_REDEMPTIONS_PER_DAY),
       },
     },
   }
@@ -135,8 +172,9 @@ export function updateSettings(
 
 export function normaliseData(value: unknown, now = new Date()): AppData {
   if (!value || typeof value !== 'object') return createDefaultData(now)
-  const candidate = value as Partial<AppData>
-  if (candidate.version !== 1) return createDefaultData(now)
+  const dataVersion = (value as { version?: number }).version
+  if (dataVersion !== 1 && dataVersion !== 2 && dataVersion !== 3) return createDefaultData(now)
+  const candidate = value as Partial<Omit<AppData, 'version'>> & { version?: number }
 
   const base = createDefaultData(now)
   const settings = candidate.settings ?? base.settings
@@ -149,21 +187,115 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
     : base.settings.schoolTopic
 
   const merged: AppData = {
-    version: 1,
+    version: 3,
     settings: {
       ...base.settings,
       ...settings,
       schoolTopic,
     },
     security: { ...base.security, ...(candidate.security ?? {}) },
-    ledgers:
-      candidate.ledgers && typeof candidate.ledgers === 'object'
-        ? candidate.ledgers
-        : base.ledgers,
-    attempts: Array.isArray(candidate.attempts) ? candidate.attempts : [],
+    ledgers: normaliseLedgers(candidate.ledgers, base),
+    attempts: Array.isArray(candidate.attempts)
+      ? candidate.attempts.map((attempt) => ({
+          ...attempt,
+          round: Number.isInteger(attempt.round) && Number(attempt.round) >= 0
+            ? Number(attempt.round)
+            : 0,
+          skillId: attempt.skillId ?? null,
+          representation: attempt.representation ?? null,
+        }))
+      : [],
+    mastery: Object.fromEntries(
+      SKILL_IDS.map((skillId) => [
+        skillId,
+        {
+          ...base.mastery[skillId],
+          ...(candidate.mastery?.[skillId] ?? {}),
+          skillId,
+          representationEvidence: {
+            ...base.mastery[skillId].representationEvidence,
+            ...(candidate.mastery?.[skillId]?.representationEvidence ?? {}),
+          },
+        },
+      ]),
+    ) as AppData['mastery'],
   }
 
   return updateSettings(merged, {})
+}
+
+function normaliseLedgers(value: unknown, base: AppData): Record<string, DailyLedger> {
+  if (!value || typeof value !== 'object') return base.ledgers
+
+  return Object.fromEntries(
+    Object.entries(value).map(([dateKey, rawLedger]) => [
+      dateKey,
+      normaliseLedger(dateKey, rawLedger),
+    ]),
+  )
+}
+
+function normaliseLedger(dateKey: string, value: unknown): DailyLedger {
+  if (!value || typeof value !== 'object') return emptyLedger(dateKey)
+  const ledger = value as Record<string, unknown>
+  const legacyRedeemedAt = typeof ledger.redeemedAt === 'string' ? ledger.redeemedAt : null
+  const legacyRedemption: RewardRedemption[] = legacyRedeemedAt
+    ? [{
+        id: `${dateKey}:0:${legacyRedeemedAt}`,
+        round: 0,
+        points: safeNonNegativeInteger(ledger.points),
+        redeemedAt: legacyRedeemedAt,
+        rewardLabel: typeof ledger.redeemedRewardLabel === 'string'
+          ? ledger.redeemedRewardLabel
+          : DEFAULT_SETTINGS.rewardLabel,
+        rewardMinutes: safeNonNegativeInteger(ledger.redeemedRewardMinutes),
+      }]
+    : []
+  const redemptions = Array.isArray(ledger.redemptions)
+    ? ledger.redemptions.flatMap((redemption, index) => normaliseRedemption(redemption, dateKey, index))
+    : legacyRedemption
+  const completedLegacyRound = legacyRedemption.length > 0 && !Array.isArray(ledger.redemptions)
+
+  return {
+    dateKey,
+    round: completedLegacyRound
+      ? 1
+      : safeNonNegativeInteger(ledger.round),
+    points: completedLegacyRound ? 0 : safeNonNegativeInteger(ledger.points),
+    awardedChallengeIds: completedLegacyRound
+      ? []
+      : Array.isArray(ledger.awardedChallengeIds)
+        ? ledger.awardedChallengeIds.filter((id): id is string => typeof id === 'string')
+        : [],
+    redemptions: redemptions.slice(-MAX_REDEMPTIONS_PER_DAY),
+  }
+}
+
+function normaliseRedemption(
+  value: unknown,
+  dateKey: string,
+  index: number,
+): RewardRedemption[] {
+  if (!value || typeof value !== 'object') return []
+  const redemption = value as Record<string, unknown>
+  if (typeof redemption.redeemedAt !== 'string' || typeof redemption.rewardLabel !== 'string') return []
+  const round = safeNonNegativeInteger(redemption.round)
+  return [{
+    id: typeof redemption.id === 'string'
+      ? redemption.id
+      : `${dateKey}:${round}:${redemption.redeemedAt}:${index}`,
+    round,
+    points: safeNonNegativeInteger(redemption.points),
+    redeemedAt: redemption.redeemedAt,
+    rewardLabel: redemption.rewardLabel,
+    rewardMinutes: safeNonNegativeInteger(redemption.rewardMinutes),
+  }]
+}
+
+function safeNonNegativeInteger(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.floor(value))
+    : 0
 }
 
 function pruneHistory(data: AppData): AppData {

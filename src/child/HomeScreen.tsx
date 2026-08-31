@@ -22,7 +22,21 @@ export function HomeScreen({
   onInstall,
 }: HomeScreenProps) {
   const reachedGoal = ledger.points >= data.settings.pointsGoal
-  const redeemed = Boolean(ledger.redeemedAt)
+  const redeemedCount = ledger.redemptions.length
+  const topic = {
+    'zahlen-bis-100': {
+      title: 'Zahlen bis 100',
+      description: 'Hunderterfeld, Zehner und Einer, Zahlenweg und Ergänzen.',
+    },
+    'plus-minus': {
+      title: 'Plus und Minus',
+      description: 'Geschickte Sprünge mit Zehnern und Einern bis 100.',
+    },
+    'verdoppeln-halbieren': {
+      title: 'Doppelt und halb',
+      description: 'Gleiche Gruppen bilden, verdoppeln und halbieren.',
+    },
+  }[data.settings.schoolTopic]
 
   return (
     <main className="home-shell">
@@ -41,23 +55,23 @@ export function HomeScreen({
 
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="eyebrow">Dein Tagesziel</p>
+          <p className="eyebrow">Dein Missionsziel</p>
           <h2>
-            {redeemed
-              ? 'Mission geschafft!'
-              : reachedGoal
-                ? 'Deine Belohnung wartet.'
-                : ledger.points > 0
-                  ? 'Weiter so, du bist unterwegs!'
+            {reachedGoal
+              ? 'Deine Belohnung wartet.'
+              : ledger.points > 0
+                ? 'Weiter so, du bist unterwegs!'
+                : redeemedCount > 0
+                  ? 'Bereit für eine weitere Mission?'
                   : 'Bereit für deinen Zahlenweg?'}
           </h2>
           <p>
-            {redeemed
-              ? 'Heute hast du dein Ziel erreicht und eingelöst.'
-              : 'Löse kurze Aufgaben und sammle dabei deine Tagespunkte.'}
+            {redeemedCount > 0 && !reachedGoal && ledger.points === 0
+              ? `Heute schon ${redeemedCount} ${redeemedCount === 1 ? 'Belohnung' : 'Belohnungen'} eingelöst. Du kannst direkt wieder Punkte sammeln.`
+              : 'Löse kurze Aufgaben und sammle dabei Punkte für deine Belohnung.'}
           </p>
           <button className="button button--primary button--large" onClick={onStart}>
-            {redeemed ? 'Urkunde ansehen' : reachedGoal ? 'Belohnung ansehen' : ledger.points ? 'Weiterrechnen' : 'Mission starten'}
+            {reachedGoal ? 'Belohnung ansehen' : ledger.points ? 'Weiterrechnen' : 'Mission starten'}
           </button>
         </div>
         <ProgressRing points={ledger.points} goal={data.settings.pointsGoal} />
@@ -77,14 +91,16 @@ export function HomeScreen({
           <span>Deine Belohnung</span>
           <strong>{formatReward(data.settings)}</strong>
         </div>
-        <span className="reward-card__status">{redeemed ? 'eingelöst' : reachedGoal ? 'bereit' : 'bei Ziel'}</span>
+        <span className="reward-card__status">
+          {reachedGoal ? 'bereit' : redeemedCount > 0 ? `${redeemedCount}× eingelöst` : 'bei Ziel'}
+        </span>
       </section>
 
       <section className="today-card">
         <div>
           <p className="eyebrow">Heute üben wir</p>
-          <h2>Zahlen bis 20</h2>
-          <p>Plus, Minus, Ergänzen und Verdoppeln. Ohne Zeitdruck.</p>
+          <h2>{topic.title}</h2>
+          <p>{topic.description} Ohne Zeitdruck.</p>
         </div>
         <div className="number-tiles" aria-hidden="true"><span>8</span><span>+</span><span>7</span></div>
       </section>
