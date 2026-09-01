@@ -1147,6 +1147,102 @@ h3 {
   transform: skewX(35deg);
 }
 
+/* Phase 4 representations */
+
+.money-visual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.money-coin {
+  width: clamp(58px, 16vw, 78px);
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #57430d;
+  border: 4px double #987a24;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #fff4a8, #d8a82e);
+  box-shadow: inset 0 0 0 3px #f8d969, 0 5px 10px #5d4b1326;
+  font-size: clamp(1rem, 4vw, 1.35rem);
+  font-weight: 950;
+}
+
+.money-coin small { font-size: 0.52em; font-weight: 900; }
+.money-coin--5,
+.money-coin--10,
+.money-coin--20 { color: #673822; border-color: #9b5232; background: radial-gradient(circle at 35% 28%, #ffc9a5, #c8764f); box-shadow: inset 0 0 0 3px #e9a17c, 0 5px 10px #5d4b1326; }
+.money-coin--100,
+.money-coin--200 { color: #3c5050; border-color: #607a79; background: radial-gradient(circle at 35% 28%, #e6eeee, #8fa6a4); box-shadow: inset 0 0 0 3px #c6d5d3, 0 5px 10px #5d4b1326; }
+
+.clock-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.clock-face-wrap { width: min(250px, 65vw); text-align: center; }
+.clock-visual--pair .clock-face-wrap { width: min(205px, 38vw); }
+.clock-face-wrap > strong { color: var(--ink-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.clock-face { width: 100%; display: block; }
+.clock-face__rim { fill: #fffdf4; stroke: #7e9d92; stroke-width: 8; }
+.clock-face text { fill: var(--ink); font-family: inherit; font-size: 15px; font-weight: 850; }
+.clock-face__hour { stroke: var(--forest); stroke-width: 10; stroke-linecap: round; }
+.clock-face__minute { stroke: var(--coral); stroke-width: 6; stroke-linecap: round; }
+.clock-face__pin { fill: var(--yellow); stroke: var(--forest); stroke-width: 3; }
+.clock-visual__arrow { color: var(--coral); font-size: clamp(1.3rem, 5vw, 2.2rem); font-weight: 950; }
+
+.ruler-visual { width: 100%; min-height: 115px; overflow: visible; }
+.ruler-visual__body { fill: #fff0a9; stroke: #bd9635; stroke-width: 3; }
+.ruler-visual__tick { stroke: #755d26; stroke-width: 2; }
+.ruler-visual text { fill: #654d18; font-family: inherit; font-size: 13px; font-weight: 800; }
+.ruler-visual__measure { stroke: var(--coral); stroke-width: 8; stroke-linecap: round; }
+.ruler-visual__point { fill: #fff; stroke: var(--coral); stroke-width: 4; }
+
+.shape-visual { width: min(260px, 65vw); max-height: 245px; }
+.shape-visual > * { fill: #8ac6bb; stroke: var(--forest); stroke-width: 9; stroke-linejoin: round; }
+
+.symmetry-grid {
+  width: min(380px, 85vw);
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-inline: auto;
+  padding: 10px;
+  border: 2px solid #bdd0c8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.symmetry-grid span { aspect-ratio: 1; border: 1px solid #d8e1dc; border-radius: 4px; background: #f5f7f4; }
+.symmetry-grid .symmetry-grid__axis { border-color: #c65d48; background: var(--coral); }
+.symmetry-grid .symmetry-grid__filled { border-color: #2f7770; background: var(--forest-light); }
+.symmetry-grid .symmetry-grid__solution { border: 3px dashed #9a731d; background: #ffe493; }
+
+.array-visual-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.array-visual {
+  display: grid;
+  gap: clamp(5px, 1.5vw, 10px);
+  padding: clamp(12px, 3vw, 20px);
+  border: 3px solid #9ec1b5;
+  border-radius: 18px;
+  background: var(--mint-light);
+}
+.array-visual span { width: clamp(13px, 4.5vw, 24px); aspect-ratio: 1; border: 2px solid #276c68; border-radius: 50%; background: var(--forest-light); }
+.array-visual-wrap > strong { color: var(--forest); font-size: 1.15rem; }
+
+.sharing-visual { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 8px; }
+.sharing-group { min-width: 72px; display: grid; grid-template-columns: repeat(5, 11px); align-content: center; justify-content: center; gap: 5px; padding: 12px; border: 3px solid #a8c7bb; border-radius: 16px; background: var(--mint-light); }
+.sharing-group span { width: 11px; height: 11px; border-radius: 50%; background: var(--forest-light); }
+.sharing-group--pool { max-width: 310px; grid-template-columns: repeat(10, 11px); border-color: #dfb252; background: #fff4d1; }
+.sharing-group--pool span { background: var(--coral); }
+
 .feedback-area {
   min-height: 82px;
   margin-top: 15px;

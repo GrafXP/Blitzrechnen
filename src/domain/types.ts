@@ -2,6 +2,9 @@ export type SchoolTopic =
   | 'zahlen-bis-100'
   | 'plus-minus'
   | 'verdoppeln-halbieren'
+  | 'groessen-sachrechnen'
+  | 'formen-symmetrie'
+  | 'mal-teilen'
 
 export interface AppSettings {
   pointsGoal: number
@@ -12,6 +15,7 @@ export interface AppSettings {
   reducedMotion: boolean
   highContrast: boolean
   leftHanded: boolean
+  multiplicationEnabled: boolean
 }
 
 export interface ParentSecurity {
@@ -50,7 +54,7 @@ export interface Attempt {
 }
 
 export interface AppData {
-  version: 3
+  version: 4
   settings: AppSettings
   security: ParentSecurity
   ledgers: Record<string, DailyLedger>
@@ -69,6 +73,14 @@ export type SkillId =
   | 'subtraction'
   | 'double-half'
   | 'decompose'
+  | 'money'
+  | 'time'
+  | 'length'
+  | 'shapes'
+  | 'symmetry'
+  | 'multiplication'
+  | 'sharing'
+  | 'word-problems'
 
 export type MasteryBand = 'new' | 'learning' | 'practising' | 'secure'
 
@@ -95,6 +107,14 @@ export type ChallengeKind =
   | 'double'
   | 'half'
   | 'decompose'
+  | 'money'
+  | 'time'
+  | 'length'
+  | 'shape-properties'
+  | 'symmetry'
+  | 'multiplication'
+  | 'sharing'
+  | 'word-problem'
 
 export type ChallengeInteraction = 'number-input' | 'choice'
 
@@ -107,6 +127,13 @@ export type ChallengeRepresentation =
   | 'sequence'
   | 'groups'
   | 'part-whole'
+  | 'money'
+  | 'clock'
+  | 'ruler'
+  | 'shape'
+  | 'symmetry-grid'
+  | 'array'
+  | 'sharing'
 
 export type ChallengeVisual =
   | { type: 'none' }
@@ -117,6 +144,13 @@ export type ChallengeVisual =
   | { type: 'sequence'; values: Array<number | null> }
   | { type: 'groups'; groups: number[]; crossedGroup?: number }
   | { type: 'part-whole'; whole: number; known: number; missing: number }
+  | { type: 'money'; coins: number[] }
+  | { type: 'clock'; hour: number; minute: number; endHour?: number; endMinute?: number }
+  | { type: 'ruler'; start: number; end: number; maximum: number }
+  | { type: 'shape'; shape: 'circle' | 'triangle' | 'square' | 'rectangle' | 'pentagon' | 'hexagon' }
+  | { type: 'symmetry-grid'; leftCells: Array<{ row: number; column: number }>; missingIndexes: number[]; showSolution: boolean }
+  | { type: 'array'; rows: number; columns: number; showTotal: boolean }
+  | { type: 'sharing'; total: number; groups: number; showGroups: boolean }
 
 export interface Challenge {
   id: string

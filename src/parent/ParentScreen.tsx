@@ -184,12 +184,21 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
               <option value="zahlen-bis-100">Zahlen bis 100</option>
               <option value="plus-minus">Plus und Minus</option>
               <option value="verdoppeln-halbieren">Verdoppeln und Halbieren</option>
+              <option value="groessen-sachrechnen">Geld, Uhr, Längen und Sachrechnen</option>
+              <option value="formen-symmetrie">Figuren und Symmetrie</option>
+              <option value="mal-teilen">Mal und Teilen</option>
             </select>
           </label>
 
           <div className="settings-divider" />
           <h3>Darstellung und Unterstützung</h3>
           <div className="toggle-list">
+            <Toggle
+              checked={settings.multiplicationEnabled}
+              label="Mal und Teilen freischalten"
+              description="Aktiviert Punktefelder und faires Teilen. Standardmässig bleibt dieses Thema aus."
+              onChange={(checked) => setSettings({ ...settings, multiplicationEnabled: checked })}
+            />
             <Toggle
               checked={settings.readAloud}
               label="Automatisch vorlesen"

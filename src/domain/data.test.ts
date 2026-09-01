@@ -122,8 +122,9 @@ describe('repeatable point and reward rounds', () => {
     })
 
     const migrated = normaliseData(phaseOne, NOW)
-    expect(migrated.version).toBe(3)
-    expect(Object.keys(migrated.mastery)).toHaveLength(10)
+    expect(migrated.version).toBe(4)
+    expect(Object.keys(migrated.mastery)).toHaveLength(18)
+    expect(migrated.settings.multiplicationEnabled).toBe(false)
     expect(migrated.attempts[0].skillId).toBeNull()
     expect(migrated.attempts[0].round).toBe(0)
     expect(currentLedger(migrated, DATE_KEY).points).toBe(0)

@@ -36,6 +36,20 @@ export function HomeScreen({
       title: 'Doppelt und halb',
       description: 'Gleiche Gruppen bilden, verdoppeln und halbieren.',
     },
+    'groessen-sachrechnen': {
+      title: 'Geld, Uhr und Längen',
+      description: 'Mit Franken und Rappen rechnen, Uhren lesen und Strecken messen.',
+    },
+    'formen-symmetrie': {
+      title: 'Figuren und Symmetrie',
+      description: 'Ecken und Seiten untersuchen und Spiegelbilder ergänzen.',
+    },
+    'mal-teilen': {
+      title: 'Mal und Teilen',
+      description: data.settings.multiplicationEnabled
+        ? 'Punktefelder lesen und Mengen fair aufteilen.'
+        : 'Sachaufgaben üben. Mal und Teilen ist noch gesperrt.',
+    },
   }[data.settings.schoolTopic]
 
   return (

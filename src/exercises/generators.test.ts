@@ -18,7 +18,7 @@ describe('0–100 exercise generators', () => {
         expect(challenge.difficulty).toBe(difficulty)
         expect(Number.isInteger(challenge.answer)).toBe(true)
         expect(challenge.answer).toBeGreaterThanOrEqual(0)
-        expect(challenge.answer).toBeLessThanOrEqual(100)
+        expect(challenge.answer).toBeLessThanOrEqual(skillId === 'money' ? 999 : 100)
         expect(challenge.prompt).not.toMatch(/undefined|NaN/)
         expect(challenge.spokenPrompt.length).toBeGreaterThan(5)
         expect(challenge.hintVisual.type).not.toBe('none')
@@ -31,6 +31,26 @@ describe('0–100 exercise generators', () => {
         }
         if (challenge.kind === 'subtraction' || challenge.kind === 'half') {
           expect(challenge.answer).toBeGreaterThanOrEqual(0)
+        }
+        if (challenge.promptVisual.type === 'money') {
+          expect(challenge.answer).toBe(challenge.promptVisual.coins.reduce((sum, coin) => sum + coin, 0))
+        }
+        if (challenge.promptVisual.type === 'ruler') {
+          expect(challenge.answer).toBe(challenge.promptVisual.end - challenge.promptVisual.start)
+        }
+        if (challenge.promptVisual.type === 'symmetry-grid') {
+          expect(challenge.answer).toBe(challenge.promptVisual.missingIndexes.length)
+        }
+        if (challenge.promptVisual.type === 'array') {
+          expect(challenge.answer).toBe(challenge.promptVisual.rows * challenge.promptVisual.columns)
+        }
+        if (challenge.promptVisual.type === 'sharing') {
+          expect(challenge.answer).toBe(challenge.promptVisual.total / challenge.promptVisual.groups)
+        }
+        if (challenge.promptVisual.type === 'clock' && challenge.prompt === 'Wie viele Minuten vergehen?') {
+          const start = challenge.promptVisual.hour * 60 + challenge.promptVisual.minute
+          const end = challenge.promptVisual.endHour! * 60 + challenge.promptVisual.endMinute!
+          expect(challenge.answer).toBe(end >= start ? end - start : end + 12 * 60 - start)
         }
       }
     }

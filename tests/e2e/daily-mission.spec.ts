@@ -1,6 +1,42 @@
 import { expect, test, type Page } from '@playwright/test'
 
 async function answerFor(page: Page, prompt: string): Promise<string> {
+  const money = page.locator('.prompt-visual .money-visual')
+  if (await money.count()) return String(await money.getAttribute('data-total'))
+
+  const ruler = page.locator('.prompt-visual .ruler-visual')
+  if (await ruler.count()) {
+    return String(Number(await ruler.getAttribute('data-end')) - Number(await ruler.getAttribute('data-start')))
+  }
+
+  const shape = page.locator('.prompt-visual .shape-visual')
+  if (await shape.count()) {
+    const sides = { circle: 0, triangle: 3, square: 4, rectangle: 4, pentagon: 5, hexagon: 6 }
+    return String(sides[(await shape.getAttribute('data-shape')) as keyof typeof sides])
+  }
+
+  const symmetry = page.locator('.prompt-visual .symmetry-grid')
+  if (await symmetry.count()) return String(await symmetry.getAttribute('data-missing'))
+
+  const array = page.locator('.prompt-visual .array-visual-wrap')
+  if (await array.count()) return String(await array.getAttribute('data-answer'))
+
+  const sharing = page.locator('.prompt-visual .sharing-visual')
+  if (await sharing.count()) return String(await sharing.getAttribute('data-answer'))
+
+  const clocks = page.locator('.prompt-visual .clock-face-wrap')
+  if (await clocks.count()) {
+    const hour = Number(await clocks.first().getAttribute('data-hour'))
+    const minute = Number(await clocks.first().getAttribute('data-minute'))
+    if (prompt === 'Welche Stunde zeigt die Uhr?') return String(hour)
+    if (prompt.startsWith('Wie viele Minuten nach')) return String(minute)
+    const endHour = Number(await clocks.last().getAttribute('data-hour'))
+    const endMinute = Number(await clocks.last().getAttribute('data-minute'))
+    let duration = endHour * 60 + endMinute - (hour * 60 + minute)
+    if (duration < 0) duration += 12 * 60
+    return String(duration)
+  }
+
   if (prompt === 'Wie viele Punkte siehst du?') {
     return String(await page.locator('.prompt-visual .hundred-field__dot--filled').count())
   }
@@ -34,6 +70,12 @@ async function answerFor(page: Page, prompt: string): Promise<string> {
   if (match) return String(Number(match[1]) / 2)
 
   match = prompt.match(/^(\d+) = (\d+) \+ \?$/)
+  if (match) return String(Number(match[1]) - Number(match[2]))
+
+  match = prompt.match(/^Noemi hat (\d+) Murmeln\. Sie bekommt (\d+) dazu\./)
+  if (match) return String(Number(match[1]) + Number(match[2]))
+
+  match = prompt.match(/^Am Znüni liegen (\d+) Äpfel bereit\. (\d+) werden gegessen\./)
   if (match) return String(Number(match[1]) - Number(match[2]))
 
   throw new Error(`Unknown prompt: ${prompt}`)
@@ -106,8 +148,33 @@ test('redeems a reward and immediately starts a fresh same-day round', async ({ 
   const masteryValues = await page.locator('.mastery-track').evaluateAll((elements) =>
     elements.map((element) => Number(element.getAttribute('aria-valuenow'))),
   )
-  expect(masteryValues).toHaveLength(10)
+  expect(masteryValues).toHaveLength(18)
   expect(masteryValues.reduce((sum, value) => sum + value, 0)).toBeGreaterThan(0)
+})
+
+test('a parent can unlock conceptual multiplication and sharing', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Elternbereich' }).click()
+  await page.getByLabel('Neue PIN', { exact: true }).fill('2468')
+  await page.getByLabel('PIN wiederholen').fill('2468')
+  await page.getByRole('button', { name: 'PIN speichern' }).click()
+
+  await page.getByLabel('Punkteziel').selectOption('200')
+  await page.getByLabel('Aktuelles Schulthema').selectOption('mal-teilen')
+  await page.getByLabel('Mal und Teilen freischalten').check()
+  await page.getByRole('button', { name: 'Einstellungen speichern' }).click()
+  await page.getByRole('button', { name: 'Zurück zum Start' }).click()
+  await expect(page.getByRole('heading', { name: 'Mal und Teilen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Mission starten' }).click()
+
+  let sawConceptualModel = false
+  for (let index = 0; index < 13; index += 1) {
+    if (await page.locator('.array-visual, .sharing-visual').count()) sawConceptualModel = true
+    await solveCurrentChallenge(page)
+    if (sawConceptualModel) break
+    await page.getByRole('button', { name: 'Weiter' }).click()
+  }
+  expect(sawConceptualModel).toBe(true)
 })
 
 test('loads the app shell offline after the first visit', async ({ page, context }) => {

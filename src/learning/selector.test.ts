@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { awardResolvedChallenge, createDefaultData } from '../domain/data'
-import { challengeForSession, isDue } from './selector'
+import { availableSkills, challengeForSession, isDue } from './selector'
 
 describe('adaptive challenge selection', () => {
   it('is deterministic from the same learning state', () => {
@@ -37,5 +37,20 @@ describe('adaptive challenge selection', () => {
     const state = { ...data.mastery.addition, band: 'secure' as const, nextReviewDate: '2026-09-10' }
     expect(isDue(state, '2026-09-09')).toBe(false)
     expect(isDue(state, '2026-09-10')).toBe(true)
+  })
+
+  it('keeps multiplication locked until a parent enables it', () => {
+    const data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    expect(availableSkills(data).map((skill) => skill.id)).not.toContain('multiplication')
+    expect(availableSkills(data).map((skill) => skill.id)).not.toContain('sharing')
+
+    const unlocked = {
+      ...data,
+      settings: { ...data.settings, schoolTopic: 'mal-teilen' as const, multiplicationEnabled: true },
+    }
+    const unlockedIds = availableSkills(unlocked).map((skill) => skill.id)
+    expect(unlockedIds).toContain('multiplication')
+    expect(unlockedIds).toContain('sharing')
+    expect(unlockedIds).toContain('word-problems')
   })
 })

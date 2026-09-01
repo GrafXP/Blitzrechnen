@@ -25,6 +25,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   reducedMotion: false,
   highContrast: false,
   leftHanded: false,
+  multiplicationEnabled: false,
 }
 
 export function emptyLedger(dateKey: string): DailyLedger {
@@ -40,7 +41,7 @@ export function emptyLedger(dateKey: string): DailyLedger {
 export function createDefaultData(now = new Date()): AppData {
   const dateKey = zurichDateKey(now)
   return {
-    version: 3,
+    version: 4,
     settings: { ...DEFAULT_SETTINGS },
     security: {
       pinHash: null,
@@ -173,7 +174,7 @@ export function updateSettings(
 export function normaliseData(value: unknown, now = new Date()): AppData {
   if (!value || typeof value !== 'object') return createDefaultData(now)
   const dataVersion = (value as { version?: number }).version
-  if (dataVersion !== 1 && dataVersion !== 2 && dataVersion !== 3) return createDefaultData(now)
+  if (![1, 2, 3, 4].includes(dataVersion ?? 0)) return createDefaultData(now)
   const candidate = value as Partial<Omit<AppData, 'version'>> & { version?: number }
 
   const base = createDefaultData(now)
@@ -182,12 +183,15 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
     'zahlen-bis-100',
     'plus-minus',
     'verdoppeln-halbieren',
+    'groessen-sachrechnen',
+    'formen-symmetrie',
+    'mal-teilen',
   ].includes(settings.schoolTopic)
     ? settings.schoolTopic
     : base.settings.schoolTopic
 
   const merged: AppData = {
-    version: 3,
+    version: 4,
     settings: {
       ...base.settings,
       ...settings,

@@ -6,6 +6,7 @@ export interface SkillDefinition {
   shortLabel: string
   description: string
   topics: SchoolTopic[]
+  scope: 'core' | 'extension' | 'multiplication'
 }
 
 export const SKILLS: SkillDefinition[] = [
@@ -15,6 +16,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Zahlenblick',
     description: 'Anzahlen und Zahlen im Hunderterraum sicher erkennen.',
     topics: ['zahlen-bis-100'],
+    scope: 'core',
   },
   {
     id: 'place-value',
@@ -22,6 +24,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Stellenwert',
     description: 'Zahlen als Zehner und Einer lesen und aufbauen.',
     topics: ['zahlen-bis-100'],
+    scope: 'core',
   },
   {
     id: 'number-order',
@@ -29,6 +32,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Zahlen ordnen',
     description: 'Zahlen vergleichen und auf dem Zahlenweg einordnen.',
     topics: ['zahlen-bis-100'],
+    scope: 'core',
   },
   {
     id: 'count-steps',
@@ -36,6 +40,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Zählschritte',
     description: 'Vorwärts und rückwärts in passenden Schritten zählen.',
     topics: ['zahlen-bis-100'],
+    scope: 'core',
   },
   {
     id: 'complement-ten',
@@ -43,6 +48,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Zum Zehner',
     description: 'Bis zum nächsten vollen Zehner ergänzen.',
     topics: ['zahlen-bis-100', 'plus-minus'],
+    scope: 'core',
   },
   {
     id: 'complement-hundred',
@@ -50,6 +56,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Bis 100',
     description: 'Eine Zahl geschickt bis 100 ergänzen.',
     topics: ['zahlen-bis-100', 'plus-minus'],
+    scope: 'core',
   },
   {
     id: 'addition',
@@ -57,6 +64,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Plus',
     description: 'Einer und Zehner schrittweise addieren.',
     topics: ['plus-minus'],
+    scope: 'core',
   },
   {
     id: 'subtraction',
@@ -64,6 +72,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Minus',
     description: 'Einer und Zehner schrittweise subtrahieren.',
     topics: ['plus-minus'],
+    scope: 'core',
   },
   {
     id: 'double-half',
@@ -71,6 +80,7 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Doppelt & halb',
     description: 'Zahlen mit zwei gleich grossen Gruppen verstehen.',
     topics: ['verdoppeln-halbieren'],
+    scope: 'core',
   },
   {
     id: 'decompose',
@@ -78,6 +88,71 @@ export const SKILLS: SkillDefinition[] = [
     shortLabel: 'Zerlegen',
     description: 'Zahlen in verschiedene passende Teile zerlegen.',
     topics: ['zahlen-bis-100', 'plus-minus', 'verdoppeln-halbieren'],
+    scope: 'core',
+  },
+  {
+    id: 'money',
+    label: 'Franken und Rappen',
+    shortLabel: 'Geld',
+    description: 'Symbolische Münzen erkennen und Beträge zusammenzählen.',
+    topics: ['groessen-sachrechnen'],
+    scope: 'extension',
+  },
+  {
+    id: 'time',
+    label: 'Uhrzeit und Dauer',
+    shortLabel: 'Uhrzeit',
+    description: 'Volle, halbe und Viertelstunden sowie kurze Zeitspannen lesen.',
+    topics: ['groessen-sachrechnen'],
+    scope: 'extension',
+  },
+  {
+    id: 'length',
+    label: 'Längen messen',
+    shortLabel: 'Längen',
+    description: 'Strecken am Lineal in Zentimetern bestimmen.',
+    topics: ['groessen-sachrechnen'],
+    scope: 'extension',
+  },
+  {
+    id: 'shapes',
+    label: 'Figuren untersuchen',
+    shortLabel: 'Figuren',
+    description: 'Ecken und Seiten ebener Figuren sicher bestimmen.',
+    topics: ['formen-symmetrie'],
+    scope: 'extension',
+  },
+  {
+    id: 'symmetry',
+    label: 'Symmetrie ergänzen',
+    shortLabel: 'Symmetrie',
+    description: 'Spiegelbilder an einer senkrechten Achse vervollständigen.',
+    topics: ['formen-symmetrie'],
+    scope: 'extension',
+  },
+  {
+    id: 'multiplication',
+    label: 'Mal als Punktefeld',
+    shortLabel: 'Mal',
+    description: 'Gleich grosse Reihen als Malaufgabe verstehen.',
+    topics: ['mal-teilen'],
+    scope: 'multiplication',
+  },
+  {
+    id: 'sharing',
+    label: 'Fair teilen',
+    shortLabel: 'Teilen',
+    description: 'Mengen ohne Rest auf gleich grosse Gruppen verteilen.',
+    topics: ['mal-teilen'],
+    scope: 'multiplication',
+  },
+  {
+    id: 'word-problems',
+    label: 'Sachaufgaben verstehen',
+    shortLabel: 'Sachaufgabe',
+    description: 'Kurze Alltagssituationen in eine Rechnung übersetzen.',
+    topics: ['plus-minus', 'groessen-sachrechnen', 'mal-teilen'],
+    scope: 'extension',
   },
 ]
 

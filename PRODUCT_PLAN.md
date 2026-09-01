@@ -1,6 +1,6 @@
 # Mobile Mathematics Trainer — Product and Delivery Plan
 
-Status: Phases 1 and 2 implemented; broader curriculum phases remain proposed. Reward model revised 31 August 2026 for repeatable, parent-approved rounds.
+Status: Phases 1, 2, and 4 implemented; Phase 4 was intentionally delivered before Phase 3. Game-layer and family-pilot phases remain proposed. Reward model revised 31 August 2026 for repeatable, parent-approved rounds.
 Working title: **Mathe-Mission** (final name should be chosen with the child)
 
 ## 1. Product decision
@@ -250,8 +250,13 @@ Exit: the app feels playful, but every round still stops at the configured goal 
 
 ### Phase 4 — broader Zahlenbuch coverage (8–10 days)
 
-- Add money/time/length, figures/symmetry, conceptual multiplication/sharing, and short number stories.
-- Add Swiss German-aware content review while keeping written UI in Swiss Standard German.
+Status: **implemented ahead of Phase 3**.
+
+- Added money/time/length, figures/symmetry, conceptual multiplication/sharing, and short number stories as eight adaptive skill families at four levels.
+- Added original symbolic coin, analogue clock, ruler, polygon, symmetry-grid, array, and sharing visuals.
+- Added parent-selectable school topics and an explicit, default-off unlock for multiplication and sharing.
+- Extended local mastery, deterministic generation, schema migration, and parent progress from 10 to 18 skills.
+- Added Swiss-context wording while keeping written UI in Swiss Standard German.
 
 Exit: the app covers all major 2nd-class strands, not only arithmetic drill.
 

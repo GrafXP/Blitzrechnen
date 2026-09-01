@@ -1,6 +1,6 @@
 # Mathe-Mission
 
-An installable, local-first mathematics trainer for a child in the Swiss 2nd primary class. Phases 1 and 2 provide the complete application foundation and an adaptive arithmetic course through the number range to 100.
+An installable, local-first mathematics trainer for a child in the Swiss 2nd primary class. Phases 1, 2, and 4 provide the application foundation, adaptive arithmetic through 100, and broader quantities, geometry, multiplication, sharing, and story problems. Phase 4 was intentionally delivered before Phase 3.
 
 ## Run locally
 
@@ -49,5 +49,15 @@ npx playwright install chromium
 - explainable selection weighted toward due review and the school topic chosen by the parent;
 - migration of existing Phase 1 points, settings, attempts, PIN, and redemption history;
 - parent learning view using supportive bands rather than grades.
+
+### Phase 4 broader course
+
+- eight additional skill families: money, time, length, shapes, symmetry, multiplication arrays, fair sharing, and short word problems;
+- original responsive visuals for symbolic Swiss coins, analogue clocks, rulers, polygons, symmetry grids, dot arrays, and sharing groups;
+- three additional parent-selectable school topics for quantities/story problems, figures/symmetry, and multiplication/division;
+- multiplication and sharing remain disabled by default and require an explicit parent unlock;
+- adaptive scheduling and mastery now cover all 18 skill families, with extensions gated by the selected school topic;
+- Swiss Standard German wording and familiar contexts such as Franken, Rappen, and Znüni;
+- automatic schema migration that preserves existing settings, rewards, attempts, and mastery.
 
 The wider product and curriculum roadmap is in [PRODUCT_PLAN.md](./PRODUCT_PLAN.md).
