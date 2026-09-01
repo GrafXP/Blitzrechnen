@@ -42,8 +42,13 @@ export function challengeForSession(
 ): Challenge {
   const round = currentLedger(data, dateKey).round
   const random = randomFromSeed(hashString(`${dateKey}:${round}:adaptive-selector:${index}`))
-  const todaysSkillIds = data.attempts
-    .filter((attempt) => attempt.dateKey === dateKey && attempt.skillId)
+  const roundAttempts = data.attempts
+    .filter((attempt) => attempt.dateKey === dateKey && attempt.round === round && attempt.skillId)
+  const roundSkillIds = roundAttempts
+    .map((attempt) => attempt.skillId!)
+  const recentSkillIds = data.attempts
+    .filter((attempt) => attempt.skillId)
+    .slice(-12)
     .map((attempt) => attempt.skillId!)
   const eligible = availableSkills(data)
   const due = eligible.filter((skill) => isDue(data.mastery[skill.id], dateKey))
@@ -52,18 +57,35 @@ export function challengeForSession(
   let pool = roll < 0.5 ? due : roll < 0.8 ? currentTopic : eligible
   if (pool.length === 0) pool = eligible
 
-  const lastTwo = todaysSkillIds.slice(-2)
-  if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) {
-    const withoutRepeat = pool.filter((skill) => skill.id !== lastTwo[0])
-    if (withoutRepeat.length) pool = withoutRepeat
-  }
+  const unseenThisRound = pool.filter((skill) => !roundSkillIds.includes(skill.id))
+  if (unseenThisRound.length) pool = unseenThisRound
 
-  const unseen = pool.filter((skill) => !todaysSkillIds.includes(skill.id))
-  if (unseen.length) pool = unseen
+  const lastTwo = recentSkillIds.slice(-2)
+  const withoutRecent = pool.filter((skill) => !lastTwo.includes(skill.id))
+  if (withoutRecent.length) pool = withoutRecent
+
+  const sameSlotInRecentRounds = new Set(
+    data.attempts
+      .filter((attempt) =>
+        attempt.dateKey === dateKey
+        && attempt.round >= Math.max(0, round - 3)
+        && attempt.round < round
+        && challengeSlot(attempt.challengeId) === index,
+      )
+      .map((attempt) => attempt.skillId)
+      .filter((skillId): skillId is SkillId => skillId !== null),
+  )
+  const withoutSameSlot = pool.filter((skill) => !sameSlotInRecentRounds.has(skill.id))
+  if (withoutSameSlot.length) pool = withoutSameSlot
 
   const selected = choose(random, pool)
   const state = data.mastery[selected.id]
   return generateChallenge(selected.id, difficultyFor(state), dateKey, index, round)
+}
+
+function challengeSlot(challengeId: string): number | null {
+  const match = challengeId.match(/:v\d+:(\d+):/)
+  return match ? Number(match[1]) : null
 }
 
 export function masteryLabel(state: MasteryState, dateKey: string): string {

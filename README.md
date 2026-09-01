@@ -45,6 +45,8 @@ npx playwright install chromium
 - four rule-based difficulty levels with every operand and result constrained to 0–100;
 - hundred fields, five/ten strips, place-value blocks, number lines, sequences, equal groups, and part-whole diagrams;
 - multiple-choice and number-entry interactions without speed scoring;
+- rotating task forms for every skill, including changed unknown positions, varied sequence gaps, alternate visual models, and a broader mix of number-entry and choice tasks;
+- cross-round scheduling that avoids recently used skills and the same skill in the same route position whenever the learning priorities allow it;
 - on-device mastery by skill and representation, with review dates after 1, 3, 7, or 14 days;
 - explainable selection weighted toward due review and the school topic chosen by the parent;
 - migration of existing Phase 1 points, settings, attempts, PIN, and redemption history;

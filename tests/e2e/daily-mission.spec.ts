@@ -2,7 +2,11 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function answerFor(page: Page, prompt: string): Promise<string> {
   const money = page.locator('.prompt-visual .money-visual')
-  if (await money.count()) return String(await money.getAttribute('data-total'))
+  if (await money.count()) {
+    const total = Number(await money.getAttribute('data-total'))
+    const target = prompt.match(/bis (\d+)/)?.[1]
+    return String(target ? Number(target) - total : total)
+  }
 
   const ruler = page.locator('.prompt-visual .ruler-visual')
   if (await ruler.count()) {
@@ -19,17 +23,26 @@ async function answerFor(page: Page, prompt: string): Promise<string> {
   if (await symmetry.count()) return String(await symmetry.getAttribute('data-missing'))
 
   const array = page.locator('.prompt-visual .array-visual-wrap')
-  if (await array.count()) return String(await array.getAttribute('data-answer'))
+  if (await array.count()) {
+    const total = Number(await array.getAttribute('data-answer'))
+    const rowQuestion = prompt.match(/(\d+) Punkte in (\d+) gleichen Reihen/)
+    return String(rowQuestion ? Number(rowQuestion[1]) / Number(rowQuestion[2]) : total)
+  }
 
   const sharing = page.locator('.prompt-visual .sharing-visual')
-  if (await sharing.count()) return String(await sharing.getAttribute('data-answer'))
+  if (await sharing.count()) {
+    const groupQuestion = prompt.match(/(\d+) Plättchen, je (\d+) pro Gruppe/)
+    return String(groupQuestion
+      ? Number(groupQuestion[1]) / Number(groupQuestion[2])
+      : await sharing.getAttribute('data-answer'))
+  }
 
   const clocks = page.locator('.prompt-visual .clock-face-wrap')
   if (await clocks.count()) {
     const hour = Number(await clocks.first().getAttribute('data-hour'))
     const minute = Number(await clocks.first().getAttribute('data-minute'))
-    if (prompt === 'Welche Stunde zeigt die Uhr?') return String(hour)
-    if (prompt.startsWith('Wie viele Minuten nach')) return String(minute)
+    if (prompt.includes('Stunde') || prompt.startsWith('Wie spät')) return String(hour)
+    if (prompt.startsWith('Wie viele Minuten nach') || prompt.includes('Minutenzahl')) return String(minute)
     const endHour = Number(await clocks.last().getAttribute('data-hour'))
     const endMinute = Number(await clocks.last().getAttribute('data-minute'))
     let duration = endHour * 60 + endMinute - (hour * 60 + minute)
@@ -37,25 +50,52 @@ async function answerFor(page: Page, prompt: string): Promise<string> {
     return String(duration)
   }
 
-  if (prompt === 'Wie viele Punkte siehst du?') {
+  const hundredField = page.locator('.prompt-visual .hundred-field')
+  if (await hundredField.count()) {
     return String(await page.locator('.prompt-visual .hundred-field__dot--filled').count())
   }
 
-  if (prompt === 'Welche Zahl zeigen die Zehner und Einer?') {
+  const placeValue = page.locator('.prompt-visual .place-value')
+  if (await placeValue.count()) {
     const tens = await page.locator('.prompt-visual .ten-rod').count()
     const ones = await page.locator('.prompt-visual .place-value__ones span').count()
+    if (prompt.startsWith('Wie viele Zehner')) return String(tens)
+    if (prompt.startsWith('Wie viele Einer')) return String(ones)
     return String(tens * 10 + ones)
   }
 
   let match = prompt.match(/^Welche Zahl fehlt\? Immer (\d+) (weiter|zurück)\.$/)
   if (match) {
-    const visibleValues = await page.locator('.sequence-visual span').allTextContents()
-    const previous = Number(visibleValues[1])
-    return String(match[2] === 'weiter' ? previous + Number(match[1]) : previous - Number(match[1]))
+    const values = await page.locator('.sequence-visual span').allTextContents()
+    const missingIndex = values.indexOf('?')
+    const step = Number(match[1]) * (match[2] === 'weiter' ? 1 : -1)
+    const knownIndex = missingIndex > 0 ? missingIndex - 1 : missingIndex + 1
+    return String(Number(values[knownIndex]) + step * (missingIndex - knownIndex))
   }
+
+  match = prompt.match(/^(\d+) Zehner und (\d+) Einer/)
+  if (match) return String(Number(match[1]) * 10 + Number(match[2]))
+
+  match = prompt.match(/^Wie viele Zehner stecken in (\d+)\?$/)
+  if (match) return String(Math.floor(Number(match[1]) / 10))
+
+  match = prompt.match(/^Wie viele Einer hat (\d+)\?$/)
+  if (match) return String(Number(match[1]) % 10)
+
+  match = prompt.match(/^Welche Zahl kommt direkt (nach|vor) (\d+)\?$/)
+  if (match) return String(Number(match[2]) + (match[1] === 'nach' ? 1 : -1))
+
+  match = prompt.match(/^(?:Wie viel fehlt von|Von) (\d+) (?:bis (\d+)|bis 100 fehlen)/)
+  if (match) return String(Number(match[2] ?? 100) - Number(match[1]))
 
   match = prompt.match(/^(\d+) \+ (\d+) = \?$/)
   if (match) return String(Number(match[1]) + Number(match[2]))
+
+  match = prompt.match(/^(\d+(?: \+ \d+){2,}) = \?$/)
+  if (match) return String(match[1].split(' + ').reduce((sum, value) => sum + Number(value), 0))
+
+  match = prompt.match(/^(\d+) × (\d+) = \?$/)
+  if (match) return String(Number(match[1]) * Number(match[2]))
 
   match = prompt.match(/^(\d+) − (\d+) = \?$/)
   if (match) return String(Number(match[1]) - Number(match[2]))
@@ -63,20 +103,47 @@ async function answerFor(page: Page, prompt: string): Promise<string> {
   match = prompt.match(/^(\d+) \+ \? = (\d+)$/)
   if (match) return String(Number(match[2]) - Number(match[1]))
 
+  match = prompt.match(/^\? \+ (\d+) = (\d+)$/)
+  if (match) return String(Number(match[2]) - Number(match[1]))
+
+  match = prompt.match(/^(\d+) − \? = (\d+)$/)
+  if (match) return String(Number(match[1]) - Number(match[2]))
+
+  match = prompt.match(/^\? − (\d+) = (\d+)$/)
+  if (match) return String(Number(match[1]) + Number(match[2]))
+
   match = prompt.match(/^Doppelt (\d+) = \?$/)
   if (match) return String(Number(match[1]) * 2)
 
   match = prompt.match(/^Die Hälfte von (\d+) = \?$/)
   if (match) return String(Number(match[1]) / 2)
 
+  match = prompt.match(/^(\d+) Dinge auf 2 gleiche Gruppen/)
+  if (match) return String(Number(match[1]) / 2)
+
+  match = prompt.match(/^2 Gruppen mit je (\d+)/)
+  if (match) return String(Number(match[1]) * 2)
+
   match = prompt.match(/^(\d+) = (\d+) \+ \?$/)
   if (match) return String(Number(match[1]) - Number(match[2]))
 
-  match = prompt.match(/^Noemi hat (\d+) Murmeln\. Sie bekommt (\d+) dazu\./)
-  if (match) return String(Number(match[1]) + Number(match[2]))
-
-  match = prompt.match(/^Am Znüni liegen (\d+) Äpfel bereit\. (\d+) werden gegessen\./)
+  match = prompt.match(/^(\d+) = \? \+ (\d+)$/)
   if (match) return String(Number(match[1]) - Number(match[2]))
+
+  match = prompt.match(/^(\d+) \+ \? ergibt (\d+)/)
+  if (match) return String(Number(match[2]) - Number(match[1]))
+
+  match = prompt.match(/ergänzt (\d+) zum Ganzen (\d+)/)
+  if (match) return String(Number(match[2]) - Number(match[1]))
+
+  const storyNumbers = prompt.match(/\d+/g)?.map(Number) ?? []
+  if (storyNumbers.length >= 2 && /dazu|zusammen|weitere/.test(prompt)) {
+    return String(storyNumbers[0] + storyNumbers[1])
+  }
+
+  if (storyNumbers.length >= 2 && /gegessen|steigen aus|verschenkt|fliegen weg/.test(prompt)) {
+    return String(storyNumbers[0] - storyNumbers[1])
+  }
 
   throw new Error(`Unknown prompt: ${prompt}`)
 }
@@ -86,7 +153,11 @@ async function solveCurrentChallenge(page: Page) {
   const choices = page.locator('.choice-card')
   if (await choices.count()) {
     const values = (await choices.allTextContents()).map(Number)
-    const answer = prompt.includes('grössten') ? Math.max(...values) : Math.min(...values)
+    const answer = prompt.includes('grössten')
+      ? Math.max(...values)
+      : prompt.includes('kleinsten')
+        ? Math.min(...values)
+        : Number(await answerFor(page, prompt))
     await page.getByRole('button', { name: String(answer), exact: true }).click()
     await page.getByRole('button', { name: 'Antwort prüfen' }).click()
     await expect(page.getByText('Du bekommst 10 Punkte.')).toBeVisible()

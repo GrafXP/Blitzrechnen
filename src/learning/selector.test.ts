@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { awardResolvedChallenge, createDefaultData } from '../domain/data'
+import { awardResolvedChallenge, createDefaultData, redeemReward } from '../domain/data'
 import { availableSkills, challengeForSession, isDue } from './selector'
 
 describe('adaptive challenge selection', () => {
@@ -30,6 +30,44 @@ describe('adaptive challenge selection', () => {
 
     expect(skillIds.size).toBeGreaterThanOrEqual(7)
     expect(Object.values(data.mastery).filter((state) => state.attempts > 0).length).toBe(skillIds.size)
+  })
+
+  it('changes the skill order and task forms substantially between same-day rounds', () => {
+    let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    const rounds: Array<Array<{ skillId: string; form: string }>> = []
+
+    for (let round = 0; round < 4; round += 1) {
+      const tasks: Array<{ skillId: string; form: string }> = []
+      for (let index = 0; index < 10; index += 1) {
+        const challenge = challengeForSession(data, '2026-09-01', index)
+        tasks.push({
+          skillId: challenge.skillId,
+          form: `${challenge.interaction}:${challenge.prompt.replace(/\d+/g, '#')}`,
+        })
+        data = awardResolvedChallenge(data, {
+          challengeId: challenge.id,
+          dateKey: '2026-09-01',
+          skillId: challenge.skillId,
+          representation: challenge.representation,
+          wrongAnswers: 0,
+          hintUsed: false,
+          completedAt: `2026-09-01T${10 + round}:${String(index).padStart(2, '0')}:00.000Z`,
+        })
+      }
+      rounds.push(tasks)
+      data = redeemReward(data, '2026-09-01', `2026-09-01T${10 + round}:30:00.000Z`)
+    }
+
+    rounds.forEach((tasks) => {
+      expect(new Set(tasks.map((task) => task.skillId)).size).toBeGreaterThanOrEqual(7)
+    })
+    for (let round = 1; round < rounds.length; round += 1) {
+      const sameSlots = rounds[round].filter((task, index) => task.skillId === rounds[round - 1][index].skillId)
+      const previousForms = new Set(rounds[round - 1].map((task) => task.form))
+      const repeatedForms = rounds[round].filter((task) => previousForms.has(task.form))
+      expect(sameSlots.length).toBeLessThanOrEqual(3)
+      expect(repeatedForms.length).toBeLessThanOrEqual(4)
+    }
   })
 
   it('recognises when scheduled practice is due', () => {

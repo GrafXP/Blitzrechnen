@@ -13,7 +13,7 @@ describe('0–100 exercise generators', () => {
   it.each(SKILL_IDS)('generates valid %s challenges at every difficulty', (skillId) => {
     for (const difficulty of [1, 2, 3, 4] as const) {
       for (let index = 0; index < 50; index += 1) {
-        const challenge = generateChallenge(skillId, difficulty, '2026-09-01', index)
+        const challenge = generateChallenge(skillId, difficulty, '2026-09-01', index, index % 4)
         expect(challenge.skillId).toBe(skillId)
         expect(challenge.difficulty).toBe(difficulty)
         expect(Number.isInteger(challenge.answer)).toBe(true)
@@ -33,7 +33,9 @@ describe('0–100 exercise generators', () => {
           expect(challenge.answer).toBeGreaterThanOrEqual(0)
         }
         if (challenge.promptVisual.type === 'money') {
-          expect(challenge.answer).toBe(challenge.promptVisual.coins.reduce((sum, coin) => sum + coin, 0))
+          const total = challenge.promptVisual.coins.reduce((sum, coin) => sum + coin, 0)
+          const target = challenge.prompt.match(/bis (\d+)/)?.[1]
+          expect(challenge.answer).toBe(target ? Number(target) - total : total)
         }
         if (challenge.promptVisual.type === 'ruler') {
           expect(challenge.answer).toBe(challenge.promptVisual.end - challenge.promptVisual.start)
@@ -42,10 +44,18 @@ describe('0–100 exercise generators', () => {
           expect(challenge.answer).toBe(challenge.promptVisual.missingIndexes.length)
         }
         if (challenge.promptVisual.type === 'array') {
-          expect(challenge.answer).toBe(challenge.promptVisual.rows * challenge.promptVisual.columns)
+          expect(challenge.answer).toBe(
+            challenge.prompt.includes('Wie viele je Reihe')
+              ? challenge.promptVisual.columns
+              : challenge.promptVisual.rows * challenge.promptVisual.columns,
+          )
         }
         if (challenge.promptVisual.type === 'sharing') {
-          expect(challenge.answer).toBe(challenge.promptVisual.total / challenge.promptVisual.groups)
+          expect(challenge.answer).toBe(
+            challenge.prompt.includes('Wie viele Gruppen')
+              ? challenge.promptVisual.groups
+              : challenge.promptVisual.total / challenge.promptVisual.groups,
+          )
         }
         if (challenge.promptVisual.type === 'clock' && challenge.prompt === 'Wie viele Minuten vergehen?') {
           const start = challenge.promptVisual.hour * 60 + challenge.promptVisual.minute
@@ -54,5 +64,24 @@ describe('0–100 exercise generators', () => {
         }
       }
     }
+  })
+
+  it.each(SKILL_IDS)('rotates through substantially different %s task forms across rounds', (skillId) => {
+    const forms = new Set(
+      Array.from({ length: 8 }, (_, round) => {
+        const challenge = generateChallenge(skillId, 2, '2026-09-01', 4, round)
+        const visualPattern = challenge.promptVisual.type === 'sequence'
+          ? challenge.promptVisual.values.map((value) => value === null ? '?' : '#').join(',')
+          : challenge.promptVisual.type
+        return [
+          challenge.interaction,
+          challenge.representation,
+          challenge.prompt.replace(/\d+/g, '#'),
+          visualPattern,
+        ].join('|')
+      }),
+    )
+
+    expect(forms.size).toBeGreaterThanOrEqual(3)
   })
 })
