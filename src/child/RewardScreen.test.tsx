@@ -44,6 +44,7 @@ describe('child reward screen', () => {
     )
 
     expect(screen.getByText('Eingelöst')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Einlösen rückgängig machen/ })).toBeInTheDocument()
     expect(screen.getAllByText('15 Min. Comic lesen')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: /15 Min\. Comic lesen/ }))
 

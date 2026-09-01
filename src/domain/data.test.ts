@@ -7,6 +7,7 @@ import {
   currentLedger,
   hasReachedGoal,
   redeemCollectedReward,
+  undoCollectedRewardRedemption,
   selectRewardDefinition,
   selectMissionSkin,
   updateSettings,
@@ -90,7 +91,7 @@ describe('repeatable point and reward rounds', () => {
     expect(data.collectedRewards).toHaveLength(2)
   })
 
-  it('does not collect before the goal and redeems a collected item only once', () => {
+  it('does not collect before the goal and can redeem or undo a collected item idempotently', () => {
     let data = chooseDefaultReward(createDefaultData(NOW))
     expect(collectActiveReward(data, DATE_KEY)).toBe(data)
     for (let index = 0; index < 10; index += 1) {
@@ -106,6 +107,11 @@ describe('repeatable point and reward rounds', () => {
     data = redeemCollectedReward(data, rewardId, '2026-08-31T19:00:00.000Z')
     expect(data.collectedRewards[0].redeemedAt).toBe('2026-08-31T19:00:00.000Z')
     expect(redeemCollectedReward(data, rewardId)).toBe(data)
+
+    data = undoCollectedRewardRedemption(data, rewardId)
+    expect(data.collectedRewards[0].redeemedAt).toBeNull()
+    expect(undoCollectedRewardRedemption(data, rewardId)).toBe(data)
+    expect(undoCollectedRewardRedemption(data, 'missing-reward')).toBe(data)
   })
 
   it('keeps a new day independent from previous progress', () => {
@@ -130,6 +136,23 @@ describe('repeatable point and reward rounds', () => {
     expect(data.settings.pointsGoal).toBe(200)
     expect(data.settings.rewardMinutes).toBe(0)
     expect(data.settings.rewardLabel).toBe('Gamen')
+  })
+
+  it('requires the adult speech switch before automatic reading can be enabled', () => {
+    const initial = createDefaultData(NOW)
+    expect(initial.settings.speechEnabled).toBe(false)
+    expect(initial.settings.readAloud).toBe(false)
+
+    const blocked = updateSettings(initial, { readAloud: true })
+    expect(blocked.settings.readAloud).toBe(false)
+
+    const enabled = updateSettings(initial, { speechEnabled: true, readAloud: true })
+    expect(enabled.settings.speechEnabled).toBe(true)
+    expect(enabled.settings.readAloud).toBe(true)
+
+    const disabled = updateSettings(enabled, { speechEnabled: false })
+    expect(disabled.settings.speechEnabled).toBe(false)
+    expect(disabled.settings.readAloud).toBe(false)
   })
 
   it('moves focus back to the number foundations when a current content family is locked', () => {
@@ -157,7 +180,8 @@ describe('repeatable point and reward rounds', () => {
     })
 
     const migrated = normaliseData(phaseOne, NOW)
-    expect(migrated.version).toBe(6)
+    expect(migrated.version).toBe(7)
+    expect(migrated.settings.speechEnabled).toBe(false)
     expect(Object.keys(migrated.mastery)).toHaveLength(18)
     expect(migrated.settings.multiplicationEnabled).toBe(false)
     expect(migrated.attempts[0].skillId).toBeNull()
@@ -165,7 +189,7 @@ describe('repeatable point and reward rounds', () => {
     expect(currentLedger(migrated, DATE_KEY).points).toBe(0)
   })
 
-  it('migrates Phase 4 settings and an active round into Phase 6', () => {
+  it('migrates Phase 4 settings and an active round into Phase 7', () => {
     const phaseFour = createDefaultData(NOW) as unknown as Record<string, unknown>
     phaseFour.version = 4
     const settings = phaseFour.settings as Record<string, unknown>
@@ -180,7 +204,7 @@ describe('repeatable point and reward rounds', () => {
 
     const migrated = normaliseData(phaseFour, NOW)
 
-    expect(migrated.version).toBe(6)
+    expect(migrated.version).toBe(7)
     expect(migrated.settings.soundEffects).toBe(false)
     expect(migrated.settings.geometryEnabled).toBe(true)
     expect(migrated.settings.quantitiesEnabled).toBe(false)

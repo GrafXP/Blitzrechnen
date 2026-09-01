@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
-import { ArrowLeftIcon, CheckIcon, GiftIcon, ParentIcon } from '../components/Icons'
-import { redeemCollectedReward, selectRewardDefinition } from '../domain/data'
+import { ArrowLeftIcon, CheckIcon, GiftIcon, ParentIcon, UndoIcon } from '../components/Icons'
+import { redeemCollectedReward, selectRewardDefinition, undoCollectedRewardRedemption } from '../domain/data'
 import { formatReward, schoolTopicEnabled, schoolTopicLabel } from '../domain/reward'
 import type { AppData, DailyLedger } from '../domain/types'
 import { ParentGate } from '../parent/ParentGate'
@@ -24,6 +24,7 @@ export function RewardScreen({
   onSelected,
 }: RewardScreenProps) {
   const [rewardToRedeem, setRewardToRedeem] = useState<string | null>(null)
+  const [rewardToUndo, setRewardToUndo] = useState<string | null>(null)
   const collectedRewards = useMemo(
     () => [...data.collectedRewards].sort((first, second) => second.collectedAt.localeCompare(first.collectedAt)),
     [data.collectedRewards],
@@ -42,6 +43,12 @@ export function RewardScreen({
     if (!rewardToRedeem) return
     commit((current) => redeemCollectedReward(current, rewardToRedeem))
     setRewardToRedeem(null)
+  }
+
+  const undoRedemption = () => {
+    if (!rewardToUndo) return
+    commit((current) => undoCollectedRewardRedemption(current, rewardToUndo))
+    setRewardToUndo(null)
   }
 
   return (
@@ -128,6 +135,9 @@ export function RewardScreen({
                   <h3>{formatReward({ label: reward.rewardLabel, minutes: reward.rewardMinutes })}</h3>
                   <p>{reward.points} Punkte · {schoolTopicLabel(reward.schoolTopic)} · {formatCollectedAt(reward.collectedAt)}</p>
                 </div>
+                <button className="button button--ghost button--compact" onClick={() => setRewardToUndo(reward.id)}>
+                  <UndoIcon /> Einlösen rückgängig machen
+                </button>
               </article>
             ))}
           </div>
@@ -142,6 +152,16 @@ export function RewardScreen({
           actionLabel="Jetzt einlösen"
           onUnlocked={redeem}
           onCancel={() => setRewardToRedeem(null)}
+        />
+      )}
+      {rewardToUndo && (
+        <ParentGate
+          data={data}
+          commit={commit}
+          title="Einlösung rückgängig machen"
+          actionLabel="Rückgängig machen"
+          onUnlocked={undoRedemption}
+          onCancel={() => setRewardToUndo(null)}
         />
       )}
     </main>

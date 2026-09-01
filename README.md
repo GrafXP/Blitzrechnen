@@ -36,7 +36,7 @@ npx playwright install chromium
 - salted, derived parent PIN with retry throttling;
 - a child reward screen with open/redeemed history, plus parent settings and current-round progress;
 - IndexedDB persistence with no account, analytics, advertisements, or backend;
-- automatic read-aloud, reduced motion, high contrast, and left-handed layout options;
+- adult-controlled manual and automatic read-aloud, reduced motion, high contrast, and left-handed layout options;
 - installable PWA assets, offline app shell, update prompt, and iOS/Android install guidance.
 
 ### Phase 2 arithmetic course
@@ -60,7 +60,7 @@ npx playwright install chromium
 - four cosmetic personal-mastery badges that never affect points, rewards, or content access;
 - a local seven-day parent view for tasks, first-try success, visual-help use, collected rewards, and review suggestions;
 - explicit parent content unlocks for quantities/stories, figures/symmetry, and conceptual multiplication/sharing;
-- schema-version-6 migration that preserves earlier settings and learning/reward history.
+- schema-version-7 migration that preserves earlier settings and learning/reward history.
 
 ### Phase 4 broader course
 

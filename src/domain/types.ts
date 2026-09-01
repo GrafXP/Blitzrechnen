@@ -13,6 +13,7 @@ export interface AppSettings {
   rewardLabel: string
   rewardMinutes: number
   schoolTopic: SchoolTopic
+  speechEnabled: boolean
   readAloud: boolean
   soundEffects: boolean
   reducedMotion: boolean
@@ -82,7 +83,7 @@ export interface Attempt {
 }
 
 export interface AppData {
-  version: 6
+  version: 7
   settings: AppSettings
   security: ParentSecurity
   rewardDefinitions: RewardDefinition[]

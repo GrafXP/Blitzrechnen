@@ -42,6 +42,14 @@ export function CheckIcon(props: IconProps) {
   return <svg {...common} {...props}><path d="m5 12 4 4L19 6" /></svg>
 }
 
+export function UndoIcon(props: IconProps) {
+  return <svg {...common} {...props}><path d="M9 7 4 12l5 5" /><path d="M20 17a7 7 0 0 0-7-7H4" /></svg>
+}
+
+export function TrashIcon(props: IconProps) {
+  return <svg {...common} {...props}><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="m19 6-1 15H6L5 6" /><path d="M10 11v5M14 11v5" /></svg>
+}
+
 export function BackspaceIcon(props: IconProps) {
   return <svg {...common} {...props}><path d="m20 5-9 0-7 7 7 7h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" /><path d="m14 9 5 6m0-6-5 6" /></svg>
 }

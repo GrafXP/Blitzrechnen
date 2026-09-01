@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { challengeForSession } from '../domain/challenges'
-import { createDefaultData, currentLedger, selectMissionSkin, selectRewardDefinition } from '../domain/data'
+import { createDefaultData, currentLedger, selectMissionSkin, selectRewardDefinition, updateSettings } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
 import { MissionScreen } from './MissionScreen'
 
@@ -46,5 +46,39 @@ describe('mission feedback', () => {
     answer(challenge.answer)
     expect(screen.getByText('Du bekommst 10 Punkte.')).toBeInTheDocument()
     expect(commit).toHaveBeenCalledOnce()
+  })
+
+  it('only exposes manual reading after an adult enables speech', () => {
+    let data = createDefaultData()
+    const dateKey = zurichDateKey()
+    data = selectRewardDefinition(data, dateKey, data.rewardDefinitions[0].id)
+    data = selectMissionSkin(data, dateKey, 'number-trail')
+
+    const { rerender } = render(
+      <MissionScreen
+        data={data}
+        ledger={currentLedger(data, dateKey)}
+        dateKey={dateKey}
+        commit={vi.fn()}
+        onExit={vi.fn()}
+        onDone={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Aufgabe vorlesen' })).not.toBeInTheDocument()
+
+    data = updateSettings(data, { speechEnabled: true })
+    rerender(
+      <MissionScreen
+        data={data}
+        ledger={currentLedger(data, dateKey)}
+        dateKey={dateKey}
+        commit={vi.fn()}
+        onExit={vi.fn()}
+        onDone={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Aufgabe vorlesen' })).toBeInTheDocument()
   })
 })

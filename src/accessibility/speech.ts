@@ -6,3 +6,8 @@ export function speak(text: string): void {
   utterance.rate = 0.9
   window.speechSynthesis.speak(utterance)
 }
+
+export function stopSpeaking(): void {
+  if (!('speechSynthesis' in window)) return
+  window.speechSynthesis.cancel()
+}

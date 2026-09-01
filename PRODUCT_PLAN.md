@@ -87,7 +87,7 @@ Protected by a four-digit PIN and visually separate from child play:
 - create/remove catalogue rewards with label, optional duration, point goal, and maths category;
 - enable/disable content families available to reward categories;
 - see current-round points/tasks, collected/open reward counts, and a simple seven-day view of tasks, first-try success, hints, and skills needing review;
-- toggle sound/read-aloud, reduced motion, higher contrast, and left-handed number-pad layout;
+- allow or disable all speech, separately enable automatic read-aloud, and toggle sound, reduced motion, higher contrast, and left-handed number-pad layout;
 - use the child reward screen to redeem a specific collected item and retain a clear on-device audit entry;
 - export/import an on-device JSON backup and reset data after confirmation.
 

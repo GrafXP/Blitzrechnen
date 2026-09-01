@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
-import { speak } from '../accessibility/speech'
+import { speak, stopSpeaking } from '../accessibility/speech'
 import { playSuccessSound } from '../accessibility/sound'
 import { activePointsGoal, awardResolvedChallenge } from '../domain/data'
 import { challengeForSession } from '../domain/challenges'
@@ -33,8 +33,9 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
   const displayedPoints = Math.min(pointsGoal, ledger.points)
 
   useEffect(() => {
-    if (data.settings.readAloud) speak(challenge.spokenPrompt)
-  }, [challenge.spokenPrompt, data.settings.readAloud])
+    if (data.settings.speechEnabled && data.settings.readAloud) speak(challenge.spokenPrompt)
+    return stopSpeaking
+  }, [challenge.spokenPrompt, data.settings.speechEnabled, data.settings.readAloud])
 
   useEffect(() => {
     if (startedAtGoal) onDone()
@@ -97,11 +98,13 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
             <span style={{ width: `${(displayedPoints / pointsGoal) * 100}%` }} />
           </div>
         </div>
-        <button
-          className="icon-button"
-          onClick={() => speak(challenge.spokenPrompt)}
-          aria-label="Aufgabe vorlesen"
-        ><SpeakerIcon /></button>
+        {data.settings.speechEnabled && (
+          <button
+            className="icon-button"
+            onClick={() => speak(challenge.spokenPrompt)}
+            aria-label="Aufgabe vorlesen"
+          ><SpeakerIcon /></button>
+        )}
       </header>
 
       <MissionMap

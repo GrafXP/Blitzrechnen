@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
-import { addRewardDefinition, currentLedger, hasReachedGoal, removeRewardDefinition, updateSettings } from '../domain/data'
+import { addRewardDefinition, createDefaultData, currentLedger, hasReachedGoal, removeRewardDefinition, updateSettings } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
 import { formatReward, SCHOOL_TOPICS, schoolTopicEnabled, schoolTopicLabel } from '../domain/reward'
 import type { AppData, AppSettings, SchoolTopic } from '../domain/types'
@@ -9,7 +9,7 @@ import { SKILLS } from '../curriculum/skills'
 import { skillById } from '../curriculum/skills'
 import { sevenDayInsights, skillsNeedingReview } from '../learning/insights'
 import { masteryLabel } from '../learning/selector'
-import { ArrowLeftIcon, CheckIcon, GiftIcon, SettingsIcon } from '../components/Icons'
+import { ArrowLeftIcon, CheckIcon, GiftIcon, SettingsIcon, TrashIcon } from '../components/Icons'
 import { Toggle } from '../components/Toggle'
 import { ParentGate } from './ParentGate'
 
@@ -28,6 +28,7 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
   const [newPinAgain, setNewPinAgain] = useState('')
   const [pinMessage, setPinMessage] = useState<string | null>(null)
   const [rewardMessage, setRewardMessage] = useState<string | null>(null)
+  const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false)
   const [newReward, setNewReward] = useState({
     label: '',
     minutes: 15,
@@ -134,6 +135,12 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
 
   const removeReward = (rewardId: string) => {
     commit((current) => removeRewardDefinition(current, rewardId))
+  }
+
+  const resetAllData = () => {
+    commit(() => createDefaultData())
+    setResetConfirmationOpen(false)
+    onHome()
   }
 
   return (
@@ -338,9 +345,20 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
           <h3>Darstellung und Unterstützung</h3>
           <div className="toggle-list">
             <Toggle
-              checked={settings.readAloud}
+              checked={settings.speechEnabled}
+              label="Vorlesen erlauben"
+              description="Aktiviert die Vorlesestimme und die Lautsprecher-Taste bei Aufgaben."
+              onChange={(checked) => setSettings({
+                ...settings,
+                speechEnabled: checked,
+                readAloud: checked ? settings.readAloud : false,
+              })}
+            />
+            <Toggle
+              checked={settings.speechEnabled && settings.readAloud}
+              disabled={!settings.speechEnabled}
               label="Automatisch vorlesen"
-              description="Jede neue Aufgabe wird langsam vorgelesen."
+              description="Liest jede neue Aufgabe automatisch langsam vor."
               onChange={(checked) => setSettings({ ...settings, readAloud: checked })}
             />
             <Toggle
@@ -388,7 +406,33 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
           )}
           {pinMessage && <p className={pinMessage.includes('geändert') ? 'save-confirmation' : 'form-error'} role="status">{pinMessage}</p>}
         </section>
+
+        <section className="parent-panel data-reset-panel">
+          <div>
+            <p className="eyebrow">Datenverwaltung</p>
+            <h2>Alle Daten zurücksetzen</h2>
+            <p>Entfernt Lernfortschritt, Belohnungen, Einstellungen und Eltern-PIN dauerhaft von diesem Gerät.</p>
+          </div>
+          <button className="button button--danger" type="button" onClick={() => setResetConfirmationOpen(true)}>
+            <TrashIcon /> Alle Daten zurücksetzen
+          </button>
+        </section>
       </div>
+
+      {resetConfirmationOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+            <div className="modal-icon modal-icon--danger"><TrashIcon /></div>
+            <p className="eyebrow">Letzte Bestätigung</p>
+            <h2 id="reset-title">Wirklich alle Daten löschen?</h2>
+            <p>Alle Missionen, Punkte, Lernstände, gesammelten Belohnungen, Einstellungen und die Eltern-PIN werden gelöscht. Das kann nicht rückgängig gemacht werden.</p>
+            <div className="button-row">
+              <button type="button" className="button button--ghost" onClick={() => setResetConfirmationOpen(false)}>Abbrechen</button>
+              <button type="button" className="button button--danger" onClick={resetAllData}>Jetzt alles zurücksetzen</button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

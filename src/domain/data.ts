@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rewardLabel: 'Gamen',
   rewardMinutes: 30,
   schoolTopic: 'zahlen-bis-100',
+  speechEnabled: false,
   readAloud: false,
   soundEffects: false,
   reducedMotion: false,
@@ -59,7 +60,7 @@ export function emptyLedger(dateKey: string): DailyLedger {
 export function createDefaultData(now = new Date()): AppData {
   const dateKey = zurichDateKey(now)
   return {
-    version: 6,
+    version: 7,
     settings: { ...DEFAULT_SETTINGS },
     security: {
       pinHash: null,
@@ -252,6 +253,20 @@ export function redeemCollectedReward(
   }
 }
 
+export function undoCollectedRewardRedemption(
+  data: AppData,
+  collectedRewardId: string,
+): AppData {
+  const reward = data.collectedRewards.find((entry) => entry.id === collectedRewardId)
+  if (!reward?.redeemedAt) return data
+  return {
+    ...data,
+    collectedRewards: data.collectedRewards.map((entry) => entry.id === collectedRewardId
+      ? { ...entry, redeemedAt: null }
+      : entry),
+  }
+}
+
 export function addRewardDefinition(
   data: AppData,
   input: Omit<RewardDefinition, 'id'> & { id?: string },
@@ -287,6 +302,7 @@ export function updateSettings(
   const safeGoal = Math.min(200, Math.max(50, Math.round(next.pointsGoal / 10) * 10))
   const safeMinutes = Math.min(180, Math.max(0, Math.round(next.rewardMinutes)))
   const safeLabel = next.rewardLabel.trim().slice(0, 40) || DEFAULT_SETTINGS.rewardLabel
+  const speechEnabled = next.speechEnabled === true
   const schoolTopic = !next.quantitiesEnabled && next.schoolTopic === 'groessen-sachrechnen'
     ? DEFAULT_SETTINGS.schoolTopic
     : !next.geometryEnabled && next.schoolTopic === 'formen-symmetrie'
@@ -303,6 +319,8 @@ export function updateSettings(
       rewardMinutes: safeMinutes,
       rewardLabel: safeLabel,
       schoolTopic,
+      speechEnabled,
+      readAloud: speechEnabled && next.readAloud === true,
     },
   }
 }
@@ -310,7 +328,7 @@ export function updateSettings(
 export function normaliseData(value: unknown, now = new Date()): AppData {
   if (!value || typeof value !== 'object') return createDefaultData(now)
   const dataVersion = (value as { version?: number }).version
-  if (![1, 2, 3, 4, 5, 6].includes(dataVersion ?? 0)) return createDefaultData(now)
+  if (![1, 2, 3, 4, 5, 6, 7].includes(dataVersion ?? 0)) return createDefaultData(now)
   const candidate = value as Partial<Omit<AppData, 'version'>> & { version?: number }
 
   const base = createDefaultData(now)
@@ -319,6 +337,8 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
     quantitiesEnabled?: boolean
     geometryEnabled?: boolean
     soundEffects?: boolean
+    speechEnabled?: boolean
+    readAloud?: boolean
   }
   const schoolTopic: SchoolTopic = [
     'zahlen-bis-100',
@@ -335,6 +355,8 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
     ...settings,
     schoolTopic,
     soundEffects: legacySettings.soundEffects === true,
+    speechEnabled: legacySettings.speechEnabled === true,
+    readAloud: legacySettings.readAloud === true,
     quantitiesEnabled: typeof legacySettings.quantitiesEnabled === 'boolean'
       ? legacySettings.quantitiesEnabled
       : schoolTopic === 'groessen-sachrechnen',
@@ -358,12 +380,12 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
           : ledger,
       ]),
   )
-  const collectedRewards = dataVersion === 6
+  const collectedRewards = (dataVersion ?? 0) >= 6
     ? normaliseCollectedRewards(candidate.collectedRewards)
     : legacyCollectedRewards(ledgers, schoolTopic)
 
   const merged: AppData = {
-    version: 6,
+    version: 7,
     settings: normalisedSettings,
     security: { ...base.security, ...(candidate.security ?? {}) },
     rewardDefinitions,
