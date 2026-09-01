@@ -6,6 +6,7 @@ import type {
   AppSettings,
   ChallengeRepresentation,
   DailyLedger,
+  MissionSkin,
   RewardRedemption,
   SchoolTopic,
   SkillId,
@@ -22,9 +23,12 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rewardMinutes: 30,
   schoolTopic: 'zahlen-bis-100',
   readAloud: false,
+  soundEffects: false,
   reducedMotion: false,
   highContrast: false,
   leftHanded: false,
+  quantitiesEnabled: false,
+  geometryEnabled: false,
   multiplicationEnabled: false,
 }
 
@@ -33,6 +37,7 @@ export function emptyLedger(dateKey: string): DailyLedger {
     dateKey,
     round: 0,
     points: 0,
+    missionSkin: null,
     awardedChallengeIds: [],
     redemptions: [],
   }
@@ -41,7 +46,7 @@ export function emptyLedger(dateKey: string): DailyLedger {
 export function createDefaultData(now = new Date()): AppData {
   const dateKey = zurichDateKey(now)
   return {
-    version: 4,
+    version: 5,
     settings: { ...DEFAULT_SETTINGS },
     security: {
       pinHash: null,
@@ -61,6 +66,25 @@ export function currentLedger(data: AppData, dateKey: string): DailyLedger {
 
 export function hasReachedGoal(data: AppData, dateKey: string): boolean {
   return currentLedger(data, dateKey).points >= data.settings.pointsGoal
+}
+
+export function selectMissionSkin(
+  data: AppData,
+  dateKey: string,
+  missionSkin: MissionSkin,
+): AppData {
+  const ledger = currentLedger(data, dateKey)
+  if (ledger.points > 0 || ledger.awardedChallengeIds.length > 0 || ledger.missionSkin === missionSkin) {
+    return data
+  }
+
+  return {
+    ...data,
+    ledgers: {
+      ...data.ledgers,
+      [dateKey]: { ...ledger, missionSkin },
+    },
+  }
 }
 
 export function awardResolvedChallenge(
@@ -144,6 +168,7 @@ export function redeemReward(
         dateKey,
         round: ledger.round + 1,
         points: 0,
+        missionSkin: null,
         awardedChallengeIds: [],
         redemptions: [...ledger.redemptions, redemption].slice(-MAX_REDEMPTIONS_PER_DAY),
       },
@@ -159,6 +184,13 @@ export function updateSettings(
   const safeGoal = Math.min(200, Math.max(50, Math.round(next.pointsGoal / 10) * 10))
   const safeMinutes = Math.min(180, Math.max(0, Math.round(next.rewardMinutes)))
   const safeLabel = next.rewardLabel.trim().slice(0, 40) || DEFAULT_SETTINGS.rewardLabel
+  const schoolTopic = !next.quantitiesEnabled && next.schoolTopic === 'groessen-sachrechnen'
+    ? DEFAULT_SETTINGS.schoolTopic
+    : !next.geometryEnabled && next.schoolTopic === 'formen-symmetrie'
+      ? DEFAULT_SETTINGS.schoolTopic
+      : !next.multiplicationEnabled && next.schoolTopic === 'mal-teilen'
+        ? DEFAULT_SETTINGS.schoolTopic
+        : next.schoolTopic
 
   return {
     ...data,
@@ -167,6 +199,7 @@ export function updateSettings(
       pointsGoal: safeGoal,
       rewardMinutes: safeMinutes,
       rewardLabel: safeLabel,
+      schoolTopic,
     },
   }
 }
@@ -174,11 +207,16 @@ export function updateSettings(
 export function normaliseData(value: unknown, now = new Date()): AppData {
   if (!value || typeof value !== 'object') return createDefaultData(now)
   const dataVersion = (value as { version?: number }).version
-  if (![1, 2, 3, 4].includes(dataVersion ?? 0)) return createDefaultData(now)
+  if (![1, 2, 3, 4, 5].includes(dataVersion ?? 0)) return createDefaultData(now)
   const candidate = value as Partial<Omit<AppData, 'version'>> & { version?: number }
 
   const base = createDefaultData(now)
   const settings = candidate.settings ?? base.settings
+  const legacySettings = settings as AppSettings & {
+    quantitiesEnabled?: boolean
+    geometryEnabled?: boolean
+    soundEffects?: boolean
+  }
   const schoolTopic: SchoolTopic = [
     'zahlen-bis-100',
     'plus-minus',
@@ -191,11 +229,18 @@ export function normaliseData(value: unknown, now = new Date()): AppData {
     : base.settings.schoolTopic
 
   const merged: AppData = {
-    version: 4,
+    version: 5,
     settings: {
       ...base.settings,
       ...settings,
       schoolTopic,
+      soundEffects: legacySettings.soundEffects === true,
+      quantitiesEnabled: typeof legacySettings.quantitiesEnabled === 'boolean'
+        ? legacySettings.quantitiesEnabled
+        : schoolTopic === 'groessen-sachrechnen',
+      geometryEnabled: typeof legacySettings.geometryEnabled === 'boolean'
+        ? legacySettings.geometryEnabled
+        : schoolTopic === 'formen-symmetrie',
     },
     security: { ...base.security, ...(candidate.security ?? {}) },
     ledgers: normaliseLedgers(candidate.ledgers, base),
@@ -259,6 +304,16 @@ function normaliseLedger(dateKey: string, value: unknown): DailyLedger {
     ? ledger.redemptions.flatMap((redemption, index) => normaliseRedemption(redemption, dateKey, index))
     : legacyRedemption
   const completedLegacyRound = legacyRedemption.length > 0 && !Array.isArray(ledger.redemptions)
+  const awardedChallengeIds = Array.isArray(ledger.awardedChallengeIds)
+    ? ledger.awardedChallengeIds.filter((id): id is string => typeof id === 'string')
+    : []
+  const missionSkin: MissionSkin | null = ledger.missionSkin === 'number-trail'
+    || ledger.missionSkin === 'shape-workshop'
+    || ledger.missionSkin === 'market-day'
+    ? ledger.missionSkin
+    : safeNonNegativeInteger(ledger.points) > 0 || awardedChallengeIds.length > 0
+      ? 'number-trail'
+      : null
 
   return {
     dateKey,
@@ -266,11 +321,10 @@ function normaliseLedger(dateKey: string, value: unknown): DailyLedger {
       ? 1
       : safeNonNegativeInteger(ledger.round),
     points: completedLegacyRound ? 0 : safeNonNegativeInteger(ledger.points),
+    missionSkin: completedLegacyRound ? null : missionSkin,
     awardedChallengeIds: completedLegacyRound
       ? []
-      : Array.isArray(ledger.awardedChallengeIds)
-        ? ledger.awardedChallengeIds.filter((id): id is string => typeof id === 'string')
-        : [],
+      : awardedChallengeIds,
     redemptions: redemptions.slice(-MAX_REDEMPTIONS_PER_DAY),
   }
 }

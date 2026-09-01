@@ -101,10 +101,17 @@ async function solveCurrentChallenge(page: Page) {
   await expect(page.getByText('Du bekommst 10 Punkte.')).toBeVisible()
 }
 
+async function chooseMission(page: Page, name = 'Zahlenweg') {
+  await expect(page.getByRole('heading', { name: 'Welche Mission möchtest du?' })).toBeVisible()
+  await page.getByRole('button', { name: new RegExp(name) }).click()
+  await expect(page.getByLabel(new RegExp(`${name}: 0 von`))).toBeVisible()
+}
+
 test('redeems a reward and immediately starts a fresh same-day round', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Mathe-Mission' })).toBeVisible()
   await page.getByRole('button', { name: 'Mission starten' }).click()
+  await chooseMission(page)
 
   await solveCurrentChallenge(page)
   await expect(page.getByText('10 / 100')).toBeVisible()
@@ -134,6 +141,7 @@ test('redeems a reward and immediately starts a fresh same-day round', async ({ 
   await page.reload()
   await expect(page.getByRole('progressbar', { name: '0 von 100 Punkten' })).toBeVisible()
   await page.getByRole('button', { name: 'Mission starten' }).click()
+  await chooseMission(page, 'Markttag')
   await expect(page.getByText('Aufgabe 1', { exact: false })).toBeVisible()
   await solveCurrentChallenge(page)
   await expect(page.getByText('10 / 100')).toBeVisible()
@@ -160,12 +168,13 @@ test('a parent can unlock conceptual multiplication and sharing', async ({ page 
   await page.getByRole('button', { name: 'PIN speichern' }).click()
 
   await page.getByLabel('Punkteziel').selectOption('200')
+  await page.getByRole('checkbox', { name: /^Mal und Teilen/ }).check()
   await page.getByLabel('Aktuelles Schulthema').selectOption('mal-teilen')
-  await page.getByLabel('Mal und Teilen freischalten').check()
   await page.getByRole('button', { name: 'Einstellungen speichern' }).click()
   await page.getByRole('button', { name: 'Zurück zum Start' }).click()
   await expect(page.getByRole('heading', { name: 'Mal und Teilen' })).toBeVisible()
   await page.getByRole('button', { name: 'Mission starten' }).click()
+  await chooseMission(page, 'Formenwerkstatt')
 
   let sawConceptualModel = false
   for (let index = 0; index < 13; index += 1) {
@@ -186,6 +195,7 @@ test('loads the app shell offline after the first visit', async ({ page, context
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Mathe-Mission' })).toBeVisible()
     await page.getByRole('button', { name: 'Mission starten' }).click()
+    await chooseMission(page)
     await expect(page.getByText('Aufgabe 1')).toBeVisible()
   } finally {
     await context.setOffline(false)

@@ -1,6 +1,6 @@
 # Mathe-Mission
 
-An installable, local-first mathematics trainer for a child in the Swiss 2nd primary class. Phases 1, 2, and 4 provide the application foundation, adaptive arithmetic through 100, and broader quantities, geometry, multiplication, sharing, and story problems. Phase 4 was intentionally delivered before Phase 3.
+An installable, local-first mathematics trainer for a child in the Swiss 2nd primary class. Phases 1–4 provide the application foundation, adaptive arithmetic through 100, a calm game layer with parent insight, and broader quantities, geometry, multiplication, sharing, and story problems.
 
 ## Run locally
 
@@ -50,13 +50,23 @@ npx playwright install chromium
 - migration of existing Phase 1 points, settings, attempts, PIN, and redemption history;
 - parent learning view using supportive bands rather than grades.
 
+### Phase 3 game layer and parent insight
+
+- three equivalent mission skins chosen at the start of each round: Zahlenweg, Formenwerkstatt, and Markttag;
+- a responsive map that advances exactly once for each resolved 10-point task;
+- calm success feedback with reduced-motion support and optional quiet confirmation tones;
+- four cosmetic personal-mastery badges that never affect points, rewards, or content access;
+- a local seven-day parent view for tasks, first-try success, visual-help use, redemptions, and review suggestions;
+- explicit parent content unlocks for quantities/stories, figures/symmetry, and conceptual multiplication/sharing;
+- schema-version-5 migration that preserves earlier settings and learning/reward history.
+
 ### Phase 4 broader course
 
 - eight additional skill families: money, time, length, shapes, symmetry, multiplication arrays, fair sharing, and short word problems;
 - original responsive visuals for symbolic Swiss coins, analogue clocks, rulers, polygons, symmetry grids, dot arrays, and sharing groups;
 - three additional parent-selectable school topics for quantities/story problems, figures/symmetry, and multiplication/division;
 - multiplication and sharing remain disabled by default and require an explicit parent unlock;
-- adaptive scheduling and mastery now cover all 18 skill families, with extensions gated by the selected school topic;
+- adaptive scheduling and mastery now cover all 18 skill families, with extensions gated by parent unlocks and weighted toward the selected school topic;
 - Swiss Standard German wording and familiar contexts such as Franken, Rappen, and Znüni;
 - automatic schema migration that preserves existing settings, rewards, attempts, and mastery.
 

@@ -5,6 +5,8 @@ import { zurichDateKey } from '../domain/date'
 import type { AppData, AppSettings } from '../domain/types'
 import { createPin, validPin } from '../security/pin'
 import { SKILLS } from '../curriculum/skills'
+import { skillById } from '../curriculum/skills'
+import { sevenDayInsights, skillsNeedingReview } from '../learning/insights'
 import { masteryLabel } from '../learning/selector'
 import { ArrowLeftIcon, CheckIcon, GiftIcon, SettingsIcon } from '../components/Icons'
 import { Toggle } from '../components/Toggle'
@@ -32,6 +34,18 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
     ),
     [data.attempts, dateKey, ledger.round],
   )
+  const week = useMemo(() => sevenDayInsights(data, dateKey), [data, dateKey])
+  const reviewSkillIds = useMemo(() => skillsNeedingReview(data, dateKey), [data, dateKey])
+  const weekTotals = useMemo(() => week.reduce(
+    (totals, day) => ({
+      tasks: totals.tasks + day.tasks,
+      firstTry: totals.firstTry + day.firstTry,
+      hints: totals.hints + day.hints,
+      rewards: totals.rewards + day.rewards,
+    }),
+    { tasks: 0, firstTry: 0, hints: 0, rewards: 0 },
+  ), [week])
+  const maxDayTasks = Math.max(1, ...week.map((day) => day.tasks))
 
   useEffect(() => setSettings(data.settings), [data.settings])
 
@@ -82,6 +96,17 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
 
   const firstTry = roundAttempts.filter((attempt) => attempt.wrongAnswers === 0).length
   const reachedGoal = ledger.points >= data.settings.pointsGoal
+  const setUnlock = (
+    key: 'quantitiesEnabled' | 'geometryEnabled' | 'multiplicationEnabled',
+    topic: AppSettings['schoolTopic'],
+    checked: boolean,
+  ) => {
+    setSettings((current) => ({
+      ...current,
+      [key]: checked,
+      schoolTopic: !checked && current.schoolTopic === topic ? 'zahlen-bis-100' : current.schoolTopic,
+    }))
+  }
 
   return (
     <main className="parent-shell">
@@ -111,9 +136,40 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
           </div>
         </section>
 
+        <section className="parent-panel week-panel">
+          <div className="section-heading">
+            <div><p className="eyebrow">Letzte 7 Tage</p><h2>Lernen im Überblick</h2></div>
+            <span className="status-chip">lokal gespeichert</span>
+          </div>
+          <div className="week-summary" aria-label="Summen der letzten sieben Tage">
+            <div><strong>{weekTotals.tasks}</strong><span>Aufgaben</span></div>
+            <div><strong>{weekTotals.tasks ? Math.round((weekTotals.firstTry / weekTotals.tasks) * 100) : 0}%</strong><span>direkt gelöst</span></div>
+            <div><strong>{weekTotals.hints}</strong><span>mit Anschauung</span></div>
+            <div><strong>{weekTotals.rewards}</strong><span>Belohnungen</span></div>
+          </div>
+          <div className="week-chart" aria-label="Aufgaben pro Tag in den letzten sieben Tagen">
+            {week.map((day) => (
+              <div className="week-day" key={day.dateKey}>
+                <strong>{day.tasks}</strong>
+                <span className="week-day__bar" aria-hidden="true"><i style={{ height: `${Math.max(day.tasks ? 16 : 3, (day.tasks / maxDayTasks) * 100)}%` }} /></span>
+                <span>{day.weekday}</span>
+                <small>{day.hints ? `${day.hints}× Hilfe` : 'ohne Hilfe'}</small>
+              </div>
+            ))}
+          </div>
+          <div className="review-callout">
+            <strong>Als Nächstes wieder anschauen</strong>
+            {reviewSkillIds.length ? (
+              <ul>{reviewSkillIds.map((skillId) => <li key={skillId}>{skillById(skillId).label}</li>)}</ul>
+            ) : (
+              <p>Noch kein Lernweg ist zur Wiederholung fällig.</p>
+            )}
+          </div>
+        </section>
+
         <section className="parent-panel mastery-panel">
           <div className="section-heading">
-            <div><p className="eyebrow">Lernstand</p><h2>Rechenwege bis 100</h2></div>
+            <div><p className="eyebrow">Lernstand</p><h2>Alle Lernwege</h2></div>
             <span className="status-chip">nur auf diesem Gerät</span>
           </div>
           <p className="mastery-intro">Die Balken helfen bei der Auswahl der nächsten Aufgaben. Sie sind keine Schulnoten.</p>
@@ -175,6 +231,30 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
             </label>
           </div>
 
+          <div className="settings-divider" />
+          <h3>Inhalte freischalten</h3>
+          <p className="settings-note">Grundlagen bis 100 bleiben verfügbar. Neue Themen kommen erst dazu, wenn du sie hier freigibst.</p>
+          <div className="toggle-list content-unlocks">
+            <Toggle
+              checked={settings.quantitiesEnabled}
+              label="Geld, Uhr, Längen und Sachaufgaben"
+              description="Alltagssituationen mit Grössen und kurzen Texten üben."
+              onChange={(checked) => setUnlock('quantitiesEnabled', 'groessen-sachrechnen', checked)}
+            />
+            <Toggle
+              checked={settings.geometryEnabled}
+              label="Figuren und Symmetrie"
+              description="Eigenschaften von Figuren und Spiegelbilder üben."
+              onChange={(checked) => setUnlock('geometryEnabled', 'formen-symmetrie', checked)}
+            />
+            <Toggle
+              checked={settings.multiplicationEnabled}
+              label="Mal und Teilen"
+              description="Konzeptuelle Punktefelder und faires Teilen freischalten."
+              onChange={(checked) => setUnlock('multiplicationEnabled', 'mal-teilen', checked)}
+            />
+          </div>
+
           <label className="field field--wide">
             <span>Aktuelles Schulthema</span>
             <select
@@ -184,9 +264,9 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
               <option value="zahlen-bis-100">Zahlen bis 100</option>
               <option value="plus-minus">Plus und Minus</option>
               <option value="verdoppeln-halbieren">Verdoppeln und Halbieren</option>
-              <option value="groessen-sachrechnen">Geld, Uhr, Längen und Sachrechnen</option>
-              <option value="formen-symmetrie">Figuren und Symmetrie</option>
-              <option value="mal-teilen">Mal und Teilen</option>
+              <option value="groessen-sachrechnen" disabled={!settings.quantitiesEnabled}>Geld, Uhr, Längen und Sachrechnen</option>
+              <option value="formen-symmetrie" disabled={!settings.geometryEnabled}>Figuren und Symmetrie</option>
+              <option value="mal-teilen" disabled={!settings.multiplicationEnabled}>Mal und Teilen</option>
             </select>
           </label>
 
@@ -194,16 +274,16 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
           <h3>Darstellung und Unterstützung</h3>
           <div className="toggle-list">
             <Toggle
-              checked={settings.multiplicationEnabled}
-              label="Mal und Teilen freischalten"
-              description="Aktiviert Punktefelder und faires Teilen. Standardmässig bleibt dieses Thema aus."
-              onChange={(checked) => setSettings({ ...settings, multiplicationEnabled: checked })}
-            />
-            <Toggle
               checked={settings.readAloud}
               label="Automatisch vorlesen"
               description="Jede neue Aufgabe wird langsam vorgelesen."
               onChange={(checked) => setSettings({ ...settings, readAloud: checked })}
+            />
+            <Toggle
+              checked={settings.soundEffects}
+              label="Ruhige Bestätigungstöne"
+              description="Spielt nach einer gelösten Aufgabe einen kurzen, leisen Ton."
+              onChange={(checked) => setSettings({ ...settings, soundEffects: checked })}
             />
             <Toggle
               checked={settings.reducedMotion}

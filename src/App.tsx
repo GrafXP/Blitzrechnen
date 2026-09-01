@@ -5,6 +5,7 @@ import { useInstallPrompt } from './app/useInstallPrompt'
 import { currentLedger, hasReachedGoal } from './domain/data'
 import { zurichDateKey } from './domain/date'
 import { HomeScreen } from './child/HomeScreen'
+import { MissionPicker } from './child/MissionPicker'
 import { MissionScreen } from './child/MissionScreen'
 import { DoneScreen } from './child/DoneScreen'
 import { ParentScreen } from './parent/ParentScreen'
@@ -49,6 +50,7 @@ export default function App() {
   const reachedGoal = hasReachedGoal(data, dateKey)
   const appClassName = [
     'app',
+    `app--skin-${ledger.missionSkin ?? 'number-trail'}`,
     data.settings.highContrast ? 'app--high-contrast' : '',
     data.settings.reducedMotion ? 'app--reduced-motion' : '',
   ].filter(Boolean).join(' ')
@@ -56,8 +58,17 @@ export default function App() {
   let screen: React.ReactNode
   if (route === '/parent') {
     screen = <ParentScreen data={data} commit={commit} onHome={() => navigate('/')} />
-  } else if (route === '/mission') {
+  } else if (route === '/choose' && !reachedGoal && ledger.points === 0) {
     screen = (
+      <MissionPicker
+        dateKey={dateKey}
+        commit={commit}
+        onSelected={() => navigate('/mission')}
+        onCancel={() => navigate('/')}
+      />
+    )
+  } else if (route === '/mission') {
+    screen = ledger.missionSkin ? (
       <MissionScreen
         data={data}
         ledger={ledger}
@@ -65,6 +76,13 @@ export default function App() {
         commit={commit}
         onExit={() => navigate('/')}
         onDone={() => navigate('/done')}
+      />
+    ) : (
+      <MissionPicker
+        dateKey={dateKey}
+        commit={commit}
+        onSelected={() => navigate('/mission')}
+        onCancel={() => navigate('/')}
       />
     )
   } else if (route === '/done' && reachedGoal) {
@@ -75,7 +93,7 @@ export default function App() {
         data={data}
         ledger={ledger}
         online={online}
-        onStart={() => navigate(reachedGoal ? '/done' : '/mission')}
+        onStart={() => navigate(reachedGoal ? '/done' : ledger.missionSkin ? '/mission' : '/choose')}
         onParent={() => navigate('/parent')}
         onInstall={() => setInstallOpen(true)}
       />

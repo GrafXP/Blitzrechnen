@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type AppRoute = '/' | '/mission' | '/done' | '/parent'
+export type AppRoute = '/' | '/choose' | '/mission' | '/done' | '/parent'
 
 function safeRoute(pathname: string): AppRoute {
-  if (pathname === '/mission' || pathname === '/done' || pathname === '/parent') {
+  if (pathname === '/choose' || pathname === '/mission' || pathname === '/done' || pathname === '/parent') {
     return pathname
   }
   return '/'

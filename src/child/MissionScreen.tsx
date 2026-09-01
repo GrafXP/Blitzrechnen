@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
 import { speak } from '../accessibility/speech'
+import { playSuccessSound } from '../accessibility/sound'
 import { awardResolvedChallenge } from '../domain/data'
 import { challengeForSession } from '../domain/challenges'
 import type { AppData, DailyLedger } from '../domain/types'
 import { ArrowLeftIcon, BackspaceIcon, CheckIcon, SpeakerIcon } from '../components/Icons'
 import { ChallengeVisual } from './ChallengeVisual'
+import { MissionMap } from './MissionMap'
+import { missionById } from '../game/missions'
 
 interface MissionScreenProps {
   data: AppData
@@ -17,6 +20,7 @@ interface MissionScreenProps {
 }
 
 export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }: MissionScreenProps) {
+  const mission = missionById(ledger.missionSkin)
   const initialIndex = ledger.awardedChallengeIds.length
   const [startedAtGoal] = useState(ledger.points >= data.settings.pointsGoal)
   const [challengeIndex, setChallengeIndex] = useState(initialIndex)
@@ -63,6 +67,7 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
         hintUsed: showHint,
       }),
     )
+    if (data.settings.soundEffects) playSuccessSound()
     setResolved(true)
   }
 
@@ -80,12 +85,12 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
   }
 
   return (
-    <main className="mission-shell">
+    <main className={`mission-shell mission-shell--${mission.id}`}>
       <header className="mission-header">
         <button className="icon-button" onClick={onExit} aria-label="Mission verlassen"><ArrowLeftIcon /></button>
         <div className="mission-progress">
           <div className="mission-progress__labels">
-            <span>{challenge.skillLabel}</span><strong>{displayedPoints} / {data.settings.pointsGoal}</strong>
+            <span>{mission.name} · {challenge.skillLabel}</span><strong>{displayedPoints} / {data.settings.pointsGoal}</strong>
           </div>
           <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={data.settings.pointsGoal} aria-valuenow={displayedPoints}>
             <span style={{ width: `${(displayedPoints / data.settings.pointsGoal) * 100}%` }} />
@@ -97,6 +102,12 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
           aria-label="Aufgabe vorlesen"
         ><SpeakerIcon /></button>
       </header>
+
+      <MissionMap
+        missionSkin={mission.id}
+        points={ledger.points}
+        goal={data.settings.pointsGoal}
+      />
 
       <section className="challenge-card">
         <div className="challenge-number">Aufgabe {challengeIndex + 1} · {challenge.skillLabel}</div>
@@ -166,7 +177,8 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
           )}
           {resolved && (
             <div className="feedback feedback--success">
-              <span><CheckIcon /></span>
+              <span className="feedback__check"><CheckIcon /></span>
+              <span className="feedback__sparkles" aria-hidden="true"><i /><i /><i /></span>
               <div><strong>Genau!</strong><p>Du bekommst 10 Punkte.</p></div>
               <button className="button button--primary" type="button" onClick={next}>Weiter</button>
             </div>

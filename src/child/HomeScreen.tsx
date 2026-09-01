@@ -3,6 +3,9 @@ import { formatReward } from '../domain/reward'
 import type { AppData, DailyLedger } from '../domain/types'
 import { GiftIcon, InstallIcon, ParentIcon } from '../components/Icons'
 import { ProgressRing } from '../components/ProgressRing'
+import { missionById } from '../game/missions'
+import { BadgeShelf } from './BadgeShelf'
+import { MissionMap } from './MissionMap'
 
 interface HomeScreenProps {
   data: AppData
@@ -23,6 +26,7 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const reachedGoal = ledger.points >= data.settings.pointsGoal
   const redeemedCount = ledger.redemptions.length
+  const mission = missionById(ledger.missionSkin)
   const topic = {
     'zahlen-bis-100': {
       title: 'Zahlen bis 100',
@@ -69,7 +73,7 @@ export function HomeScreen({
 
       <section className="hero-card">
         <div className="hero-copy">
-          <p className="eyebrow">Dein Missionsziel</p>
+          <p className="eyebrow">{ledger.missionSkin ? `Deine Mission · ${mission.name}` : 'Dein Missionsziel'}</p>
           <h2>
             {reachedGoal
               ? 'Deine Belohnung wartet.'
@@ -110,6 +114,15 @@ export function HomeScreen({
         </span>
       </section>
 
+      {ledger.missionSkin && (
+        <MissionMap
+          missionSkin={ledger.missionSkin}
+          points={ledger.points}
+          goal={data.settings.pointsGoal}
+          compact
+        />
+      )}
+
       <section className="today-card">
         <div>
           <p className="eyebrow">Heute üben wir</p>
@@ -118,6 +131,8 @@ export function HomeScreen({
         </div>
         <div className="number-tiles" aria-hidden="true"><span>8</span><span>+</span><span>7</span></div>
       </section>
+
+      <BadgeShelf data={data} />
 
       <footer className="home-footer">
         <button className="text-button" onClick={onInstall}><InstallIcon /> App installieren</button>

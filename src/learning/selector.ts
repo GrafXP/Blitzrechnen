@@ -22,7 +22,16 @@ export function availableSkills(data: AppData) {
   return SKILLS.filter((skill) => {
     if (skill.scope === 'core') return true
     if (skill.scope === 'multiplication') return data.settings.multiplicationEnabled
-    return skill.topics.includes(data.settings.schoolTopic)
+    if (skill.id === 'money' || skill.id === 'time' || skill.id === 'length') {
+      return data.settings.quantitiesEnabled
+    }
+    if (skill.id === 'word-problems') {
+      return data.settings.quantitiesEnabled || data.settings.multiplicationEnabled
+    }
+    if (skill.id === 'shapes' || skill.id === 'symmetry') {
+      return data.settings.geometryEnabled
+    }
+    return false
   })
 }
 

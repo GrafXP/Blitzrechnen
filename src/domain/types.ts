@@ -6,15 +6,20 @@ export type SchoolTopic =
   | 'formen-symmetrie'
   | 'mal-teilen'
 
+export type MissionSkin = 'number-trail' | 'shape-workshop' | 'market-day'
+
 export interface AppSettings {
   pointsGoal: number
   rewardLabel: string
   rewardMinutes: number
   schoolTopic: SchoolTopic
   readAloud: boolean
+  soundEffects: boolean
   reducedMotion: boolean
   highContrast: boolean
   leftHanded: boolean
+  quantitiesEnabled: boolean
+  geometryEnabled: boolean
   multiplicationEnabled: boolean
 }
 
@@ -29,6 +34,7 @@ export interface DailyLedger {
   dateKey: string
   round: number
   points: number
+  missionSkin: MissionSkin | null
   awardedChallengeIds: string[]
   redemptions: RewardRedemption[]
 }
@@ -54,7 +60,7 @@ export interface Attempt {
 }
 
 export interface AppData {
-  version: 4
+  version: 5
   settings: AppSettings
   security: ParentSecurity
   ledgers: Record<string, DailyLedger>

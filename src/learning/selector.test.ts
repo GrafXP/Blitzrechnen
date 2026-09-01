@@ -53,4 +53,28 @@ describe('adaptive challenge selection', () => {
     expect(unlockedIds).toContain('sharing')
     expect(unlockedIds).toContain('word-problems')
   })
+
+  it('keeps Phase 4 content families behind their parent unlocks', () => {
+    const data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    const defaultIds = availableSkills(data).map((skill) => skill.id)
+    expect(defaultIds).not.toContain('money')
+    expect(defaultIds).not.toContain('shapes')
+    expect(defaultIds).not.toContain('word-problems')
+
+    const quantities = {
+      ...data,
+      settings: { ...data.settings, quantitiesEnabled: true },
+    }
+    const quantityIds = availableSkills(quantities).map((skill) => skill.id)
+    expect(quantityIds).toEqual(expect.arrayContaining(['money', 'time', 'length', 'word-problems']))
+    expect(quantityIds).not.toContain('shapes')
+
+    const geometry = {
+      ...data,
+      settings: { ...data.settings, geometryEnabled: true },
+    }
+    const geometryIds = availableSkills(geometry).map((skill) => skill.id)
+    expect(geometryIds).toEqual(expect.arrayContaining(['shapes', 'symmetry']))
+    expect(geometryIds).not.toContain('money')
+  })
 })

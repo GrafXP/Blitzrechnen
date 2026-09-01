@@ -5,6 +5,7 @@ import {
   currentLedger,
   hasReachedGoal,
   redeemReward,
+  selectMissionSkin,
   updateSettings,
   normaliseData,
 } from './data'
@@ -108,6 +109,17 @@ describe('repeatable point and reward rounds', () => {
     expect(data.settings.rewardLabel).toBe('Gamen')
   })
 
+  it('moves focus back to the number foundations when a current content family is locked', () => {
+    const unlocked = updateSettings(createDefaultData(NOW), {
+      quantitiesEnabled: true,
+      schoolTopic: 'groessen-sachrechnen',
+    })
+    expect(unlocked.settings.schoolTopic).toBe('groessen-sachrechnen')
+
+    const locked = updateSettings(unlocked, { quantitiesEnabled: false })
+    expect(locked.settings.schoolTopic).toBe('zahlen-bis-100')
+  })
+
   it('migrates Phase 1 data without losing its ledger', () => {
     const phaseOne = createDefaultData(NOW) as unknown as Record<string, unknown>
     phaseOne.version = 1
@@ -122,12 +134,60 @@ describe('repeatable point and reward rounds', () => {
     })
 
     const migrated = normaliseData(phaseOne, NOW)
-    expect(migrated.version).toBe(4)
+    expect(migrated.version).toBe(5)
     expect(Object.keys(migrated.mastery)).toHaveLength(18)
     expect(migrated.settings.multiplicationEnabled).toBe(false)
     expect(migrated.attempts[0].skillId).toBeNull()
     expect(migrated.attempts[0].round).toBe(0)
     expect(currentLedger(migrated, DATE_KEY).points).toBe(0)
+  })
+
+  it('migrates Phase 4 settings and an active round into Phase 5', () => {
+    const phaseFour = createDefaultData(NOW) as unknown as Record<string, unknown>
+    phaseFour.version = 4
+    const settings = phaseFour.settings as Record<string, unknown>
+    delete settings.soundEffects
+    delete settings.quantitiesEnabled
+    delete settings.geometryEnabled
+    settings.schoolTopic = 'formen-symmetrie'
+    const ledgers = phaseFour.ledgers as Record<string, Record<string, unknown>>
+    ledgers[DATE_KEY].points = 20
+    ledgers[DATE_KEY].awardedChallengeIds = ['old:0', 'old:1']
+    delete ledgers[DATE_KEY].missionSkin
+
+    const migrated = normaliseData(phaseFour, NOW)
+
+    expect(migrated.version).toBe(5)
+    expect(migrated.settings.soundEffects).toBe(false)
+    expect(migrated.settings.geometryEnabled).toBe(true)
+    expect(migrated.settings.quantitiesEnabled).toBe(false)
+    expect(currentLedger(migrated, DATE_KEY).missionSkin).toBe('number-trail')
+  })
+
+  it('keeps mission cosmetics separate from points and resets the choice after redemption', () => {
+    let data = selectMissionSkin(createDefaultData(NOW), DATE_KEY, 'market-day')
+    expect(currentLedger(data, DATE_KEY)).toMatchObject({ points: 0, missionSkin: 'market-day' })
+
+    data = awardResolvedChallenge(data, {
+      challengeId: `${DATE_KEY}:round-0:0`,
+      dateKey: DATE_KEY,
+      wrongAnswers: 0,
+      hintUsed: false,
+    })
+    const unchanged = selectMissionSkin(data, DATE_KEY, 'shape-workshop')
+    expect(unchanged).toBe(data)
+    expect(currentLedger(unchanged, DATE_KEY).points).toBe(10)
+
+    for (let index = 1; index < 10; index += 1) {
+      data = awardResolvedChallenge(data, {
+        challengeId: `${DATE_KEY}:round-0:${index}`,
+        dateKey: DATE_KEY,
+        wrongAnswers: 0,
+        hintUsed: false,
+      })
+    }
+    data = redeemReward(data, DATE_KEY)
+    expect(currentLedger(data, DATE_KEY)).toMatchObject({ points: 0, missionSkin: null })
   })
 
   it('turns a redeemed Phase 2 day into a fresh round with redemption history', () => {

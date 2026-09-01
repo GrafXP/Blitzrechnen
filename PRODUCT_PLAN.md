@@ -1,6 +1,6 @@
 # Mobile Mathematics Trainer — Product and Delivery Plan
 
-Status: Phases 1, 2, and 4 implemented; Phase 4 was intentionally delivered before Phase 3. Game-layer and family-pilot phases remain proposed. Reward model revised 31 August 2026 for repeatable, parent-approved rounds.
+Status: Phases 1–4 implemented; Phase 4 was intentionally delivered before Phase 3. The family-pilot phase remains proposed. Reward model revised 31 August 2026 for repeatable, parent-approved rounds.
 Working title: **Mathe-Mission** (final name should be chosen with the child)
 
 ## 1. Product decision
@@ -242,9 +242,14 @@ Exit: every generated task is valid, has a relevant explanation, and can complet
 
 ### Phase 3 — game layer and parent insight (4–5 days)
 
-- Add three mission skins, map progression, calm feedback animation, optional audio, and cosmetic badges for personal mastery.
-- Add the seven-day parent overview and content unlock controls.
-- Ensure cosmetics never change reward points or hide educational progress.
+Status: **implemented after the Phase 4 curriculum expansion**.
+
+- Added three child-selectable mission skins per round: Zahlenweg, Formenwerkstatt, and Markttag.
+- Added a responsive route map that advances once per resolved task, calm success motion, reduced-motion support, and optional quiet confirmation tones.
+- Added four cosmetic learning badges derived only from personal mastery evidence; badges never affect reward points or task access.
+- Added a seven-day parent overview of tasks, first-try success, visual-help use, redemptions, and supportive review suggestions.
+- Added explicit parent unlocks for quantities/stories, figures/symmetry, and conceptual multiplication/sharing.
+- Migrated the local schema to version 5 while preserving active points, mastery, settings, attempts, and reward history.
 
 Exit: the app feels playful, but every round still stops at the configured goal and another round requires parent redemption.
 

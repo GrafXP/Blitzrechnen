@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
+import { playFinishSound } from '../accessibility/sound'
 import { redeemReward } from '../domain/data'
 import { formatReward } from '../domain/reward'
 import type { AppData, DailyLedger } from '../domain/types'
 import { CheckIcon, GiftIcon, ParentIcon } from '../components/Icons'
 import { ParentGate } from '../parent/ParentGate'
+import { missionById } from '../game/missions'
+import { MissionMap } from './MissionMap'
 
 interface DoneScreenProps {
   data: AppData
@@ -16,6 +19,11 @@ interface DoneScreenProps {
 
 export function DoneScreen({ data, ledger, dateKey, commit, onHome }: DoneScreenProps) {
   const [gateOpen, setGateOpen] = useState(false)
+  const mission = missionById(ledger.missionSkin)
+
+  useEffect(() => {
+    if (data.settings.soundEffects) playFinishSound()
+  }, [data.settings.soundEffects])
 
   const redeem = () => {
     commit((current) => redeemReward(current, dateKey))
@@ -24,12 +32,14 @@ export function DoneScreen({ data, ledger, dateKey, commit, onHome }: DoneScreen
   }
 
   return (
-    <main className="done-shell">
+    <main className={`done-shell done-shell--${mission.id}`}>
       <section className="done-card">
         <div className="finish-badge" aria-hidden="true"><CheckIcon /></div>
         <p className="eyebrow">Missionsziel erreicht</p>
         <h1>Stark gerechnet!</h1>
-        <p>Du hast {data.settings.pointsGoal} Punkte gesammelt. Nach dem Einlösen wartet eine neue Mission auf dich.</p>
+        <p>Du hast den {mission.destination} erreicht und {data.settings.pointsGoal} Punkte gesammelt. Nach dem Einlösen wartet eine neue Mission auf dich.</p>
+
+        <MissionMap missionSkin={mission.id} points={ledger.points} goal={data.settings.pointsGoal} compact />
 
         <div className="voucher">
           <div className="voucher__icon"><GiftIcon /></div>
