@@ -1,13 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { createDefaultData, currentLedger } from '../domain/data'
+import { createDefaultData, currentLedger, selectRewardDefinition } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
 import { HomeScreen } from './HomeScreen'
 
 describe('child home', () => {
   it('shows the configured goal and reward and starts a mission', () => {
-    const data = createDefaultData()
+    let data = createDefaultData()
     const dateKey = zurichDateKey()
+    data = selectRewardDefinition(data, dateKey, data.rewardDefinitions[0].id)
     const onStart = vi.fn()
     render(
       <HomeScreen
@@ -15,6 +16,7 @@ describe('child home', () => {
         ledger={currentLedger(data, dateKey)}
         online
         onStart={onStart}
+        onRewards={vi.fn()}
         onParent={vi.fn()}
         onInstall={vi.fn()}
       />,

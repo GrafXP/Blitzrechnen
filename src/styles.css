@@ -443,11 +443,23 @@ h3 {
 }
 
 .reward-card {
+  width: 100%;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 13px;
   padding: 16px;
+  color: var(--ink);
+  text-align: left;
+}
+
+.reward-card--button {
+  cursor: pointer;
+}
+
+.reward-card--button:hover {
+  border-color: #9fc4b7;
+  box-shadow: 0 12px 32px rgba(30, 67, 66, 0.12);
 }
 
 .reward-card__icon {
@@ -535,6 +547,222 @@ h3 {
   justify-content: space-between;
   gap: 6px;
   padding-top: 14px;
+}
+
+/* Reward catalogue and collection */
+
+.rewards-shell {
+  width: min(1040px, 100%);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--safe-top) clamp(16px, 5vw, 54px) var(--safe-bottom);
+}
+
+.rewards-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 25px;
+}
+
+.rewards-header h1 {
+  margin-bottom: 8px;
+  color: var(--forest);
+  font-size: clamp(1.8rem, 7vw, 3rem);
+  line-height: 1.08;
+}
+
+.rewards-header p:not(.eyebrow) {
+  max-width: 720px;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.reward-catalogue,
+.reward-collection {
+  margin-top: 18px;
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid rgba(18, 60, 67, 0.1);
+  border-radius: 26px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.reward-option-grid,
+.collected-reward-list,
+.parent-reward-list {
+  display: grid;
+  gap: 12px;
+}
+
+.reward-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  color: var(--ink);
+  text-align: left;
+  border: 2px solid #dde5df;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.reward-option:hover:not(:disabled),
+.reward-option--active {
+  border-color: var(--forest-light);
+  background: var(--mint-light);
+}
+
+.reward-option__icon,
+.collected-reward__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: #805a16;
+  border-radius: 15px;
+  background: #fff0bd;
+}
+
+.reward-option__copy,
+.collected-reward__copy {
+  min-width: 0;
+}
+
+.reward-option__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reward-option__copy strong {
+  font-size: 1.03rem;
+}
+
+.reward-option__copy small,
+.collected-reward__copy p,
+.parent-reward-item span {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.reward-option__action,
+.reward-status {
+  padding: 7px 9px;
+  color: var(--forest-light);
+  border-radius: 999px;
+  background: var(--mint-light);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.reward-choice-note {
+  margin: -8px 0 16px;
+  padding: 11px 13px;
+  color: #765525;
+  border-radius: 12px;
+  background: #fff2c8;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.empty-rewards {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 34px 18px;
+  color: var(--ink-soft);
+  text-align: center;
+  border: 2px dashed #d5ded7;
+  border-radius: 18px;
+  background: #fafbf8;
+}
+
+.empty-rewards > svg {
+  width: 42px;
+  height: 42px;
+  color: #b17b20;
+}
+
+.empty-rewards p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.collected-reward {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 2px solid #ead79e;
+  border-radius: 18px;
+  background: #fff9e4;
+}
+
+.collected-reward__copy h3 {
+  margin: 5px 0 3px;
+  font-size: 1.08rem;
+}
+
+.collected-reward__copy p {
+  margin: 0;
+}
+
+.collected-reward--redeemed {
+  border-color: #d9e4db;
+  background: #f3f7f1;
+}
+
+.collected-reward--redeemed .collected-reward__icon {
+  color: #fff;
+  background: #4b8a5d;
+}
+
+.reward-status--open {
+  color: #765525;
+  background: #ffedb2;
+}
+
+.reward-status--redeemed {
+  color: #2d6741;
+  background: #dceedd;
+}
+
+.parent-reward-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #dfe5df;
+  border-radius: 15px;
+  background: #f8faf6;
+}
+
+.parent-reward-item > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.button--compact {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 0.76rem;
+}
+
+.reward-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 /* Phase 3 mission choice, maps, and mastery cosmetics */
@@ -2273,6 +2501,10 @@ h3 {
 
 .app--high-contrast .parent-panel,
 .app--high-contrast .reward-card,
+.app--high-contrast .reward-catalogue,
+.app--high-contrast .reward-collection,
+.app--high-contrast .reward-option,
+.app--high-contrast .collected-reward,
 .app--high-contrast .today-card,
 .app--high-contrast .challenge-card {
   border-width: 2px;
@@ -2391,6 +2623,11 @@ h3 {
   .settings-form { grid-column: 2; grid-row: 1 / span 4; }
 }
 
+@media (max-width: 650px) {
+  .collected-reward { grid-template-columns: auto minmax(0, 1fr); }
+  .collected-reward .button { grid-column: 1 / -1; width: 100%; }
+}
+
 @media (max-width: 390px) {
   .hero-card { min-height: 430px; padding-inline: 18px; }
   .progress-ring { width: 132px; height: 132px; }
@@ -2403,4 +2640,10 @@ h3 {
   .mission-choice__scene { min-height: 125px; }
   .mission-choice__go { display: none; }
   .mission-map { padding-inline: 10px; }
+  .reward-option { grid-template-columns: auto minmax(0, 1fr); }
+  .reward-option__action { grid-column: 1 / -1; justify-self: stretch; text-align: center; }
+  .collected-reward { grid-template-columns: auto minmax(0, 1fr); }
+  .collected-reward .button { grid-column: 1 / -1; width: 100%; }
+  .parent-reward-item { grid-template-columns: 1fr; }
+  .parent-reward-item .button { width: 100%; }
 }

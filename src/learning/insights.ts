@@ -25,7 +25,7 @@ export function sevenDayInsights(data: AppData, endDateKey: string): DailyLearni
         tasks: attempts.length,
         firstTry: attempts.filter((attempt) => attempt.wrongAnswers === 0).length,
         hints: attempts.filter((attempt) => attempt.hintUsed).length,
-        rewards: data.ledgers[dateKey]?.redemptions.length ?? 0,
+        rewards: data.collectedRewards.filter((reward) => reward.dateKey === dateKey).length,
       }
     })
 }

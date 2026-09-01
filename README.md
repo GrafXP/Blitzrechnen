@@ -30,11 +30,11 @@ npx playwright install chromium
 ## Implemented functionality
 
 - responsive child home, adaptive number mission, two-step strategy hints, and finish screen;
-- configurable 50–200 point goal and real-life reward;
+- parent-defined reward catalogue, with a 50–200 point goal and maths category per reward;
 - exactly 10 points per unique resolved task, resilient to refresh/back navigation;
-- repeatable parent-approved reward rounds, with a fresh point goal immediately after each redemption;
+- child-collected reward rounds that can repeat immediately, with PIN-protected redemption deferred until later;
 - salted, derived parent PIN with retry throttling;
-- parent settings, current-round progress, and on-device redemption history;
+- a child reward screen with open/redeemed history, plus parent settings and current-round progress;
 - IndexedDB persistence with no account, analytics, advertisements, or backend;
 - automatic read-aloud, reduced motion, high contrast, and left-handed layout options;
 - installable PWA assets, offline app shell, update prompt, and iOS/Android install guidance.
@@ -48,7 +48,7 @@ npx playwright install chromium
 - rotating task forms for every skill, including changed unknown positions, varied sequence gaps, alternate visual models, and a broader mix of number-entry and choice tasks;
 - cross-round scheduling that avoids recently used skills and the same skill in the same route position whenever the learning priorities allow it;
 - on-device mastery by skill and representation, with review dates after 1, 3, 7, or 14 days;
-- explainable selection weighted toward due review and the school topic chosen by the parent;
+- explainable selection within the maths category of the reward chosen by the child;
 - migration of existing Phase 1 points, settings, attempts, PIN, and redemption history;
 - parent learning view using supportive bands rather than grades.
 
@@ -58,9 +58,9 @@ npx playwright install chromium
 - a responsive map that advances exactly once for each resolved 10-point task;
 - calm success feedback with reduced-motion support and optional quiet confirmation tones;
 - four cosmetic personal-mastery badges that never affect points, rewards, or content access;
-- a local seven-day parent view for tasks, first-try success, visual-help use, redemptions, and review suggestions;
+- a local seven-day parent view for tasks, first-try success, visual-help use, collected rewards, and review suggestions;
 - explicit parent content unlocks for quantities/stories, figures/symmetry, and conceptual multiplication/sharing;
-- schema-version-5 migration that preserves earlier settings and learning/reward history.
+- schema-version-6 migration that preserves earlier settings and learning/reward history.
 
 ### Phase 4 broader course
 

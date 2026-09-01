@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   awardResolvedChallenge,
+  addRewardDefinition,
+  collectActiveReward,
   createDefaultData,
   currentLedger,
   hasReachedGoal,
-  redeemReward,
+  redeemCollectedReward,
+  selectRewardDefinition,
   selectMissionSkin,
   updateSettings,
   normaliseData,
@@ -13,9 +16,13 @@ import {
 const NOW = new Date('2026-08-31T12:00:00.000Z')
 const DATE_KEY = '2026-08-31'
 
+function chooseDefaultReward(data: ReturnType<typeof createDefaultData>) {
+  return selectRewardDefinition(data, DATE_KEY, data.rewardDefinitions[0].id)
+}
+
 describe('repeatable point and reward rounds', () => {
   it('awards ten points exactly once for a resolved challenge', () => {
-    const initial = createDefaultData(NOW)
+    const initial = chooseDefaultReward(createDefaultData(NOW))
     const once = awardResolvedChallenge(initial, {
       challengeId: `${DATE_KEY}:foundation:0`,
       dateKey: DATE_KEY,
@@ -34,8 +41,8 @@ describe('repeatable point and reward rounds', () => {
     expect(twice.attempts).toHaveLength(1)
   })
 
-  it('resets after redemption and can earn another reward on the same day', () => {
-    let data = createDefaultData(NOW)
+  it('collects without a parent and can earn another reward on the same day', () => {
+    let data = chooseDefaultReward(createDefaultData(NOW))
     for (let index = 0; index < 10; index += 1) {
       data = awardResolvedChallenge(data, {
         challengeId: `${DATE_KEY}:round-0:${index}`,
@@ -46,26 +53,29 @@ describe('repeatable point and reward rounds', () => {
     }
 
     expect(hasReachedGoal(data, DATE_KEY)).toBe(true)
-    data = redeemReward(data, DATE_KEY, '2026-08-31T18:00:00.000Z')
+    data = collectActiveReward(data, DATE_KEY, '2026-08-31T18:00:00.000Z')
 
     expect(currentLedger(data, DATE_KEY)).toMatchObject({
       round: 1,
       points: 0,
+      activeRewardId: null,
       awardedChallengeIds: [],
     })
-    expect(currentLedger(data, DATE_KEY).redemptions).toEqual([
+    expect(data.collectedRewards).toEqual([
       expect.objectContaining({
         round: 0,
         points: 100,
-        redeemedAt: '2026-08-31T18:00:00.000Z',
+        collectedAt: '2026-08-31T18:00:00.000Z',
+        redeemedAt: null,
         rewardLabel: 'Gamen',
         rewardMinutes: 30,
       }),
     ])
 
-    const tooEarly = redeemReward(data, DATE_KEY, '2026-08-31T18:30:00.000Z')
+    const tooEarly = collectActiveReward(data, DATE_KEY, '2026-08-31T18:30:00.000Z')
     expect(tooEarly).toBe(data)
 
+    data = selectRewardDefinition(data, DATE_KEY, data.rewardDefinitions[0].id)
     for (let index = 0; index < 10; index += 1) {
       data = awardResolvedChallenge(data, {
         challengeId: `${DATE_KEY}:round-1:${index}`,
@@ -74,19 +84,32 @@ describe('repeatable point and reward rounds', () => {
         hintUsed: false,
       })
     }
-    data = redeemReward(data, DATE_KEY, '2026-08-31T19:00:00.000Z')
+    data = collectActiveReward(data, DATE_KEY, '2026-08-31T19:00:00.000Z')
 
     expect(currentLedger(data, DATE_KEY)).toMatchObject({ round: 2, points: 0 })
-    expect(currentLedger(data, DATE_KEY).redemptions).toHaveLength(2)
+    expect(data.collectedRewards).toHaveLength(2)
   })
 
-  it('does not redeem before the goal', () => {
-    const data = createDefaultData(NOW)
-    expect(redeemReward(data, DATE_KEY)).toBe(data)
+  it('does not collect before the goal and redeems a collected item only once', () => {
+    let data = chooseDefaultReward(createDefaultData(NOW))
+    expect(collectActiveReward(data, DATE_KEY)).toBe(data)
+    for (let index = 0; index < 10; index += 1) {
+      data = awardResolvedChallenge(data, {
+        challengeId: `${DATE_KEY}:round-0:${index}`,
+        dateKey: DATE_KEY,
+        wrongAnswers: 0,
+        hintUsed: false,
+      })
+    }
+    data = collectActiveReward(data, DATE_KEY, '2026-08-31T18:00:00.000Z')
+    const rewardId = data.collectedRewards[0].id
+    data = redeemCollectedReward(data, rewardId, '2026-08-31T19:00:00.000Z')
+    expect(data.collectedRewards[0].redeemedAt).toBe('2026-08-31T19:00:00.000Z')
+    expect(redeemCollectedReward(data, rewardId)).toBe(data)
   })
 
   it('keeps a new day independent from previous progress', () => {
-    const initial = createDefaultData(NOW)
+    const initial = chooseDefaultReward(createDefaultData(NOW))
     const withPoints = awardResolvedChallenge(initial, {
       challengeId: `${DATE_KEY}:foundation:0`,
       dateKey: DATE_KEY,
@@ -134,7 +157,7 @@ describe('repeatable point and reward rounds', () => {
     })
 
     const migrated = normaliseData(phaseOne, NOW)
-    expect(migrated.version).toBe(5)
+    expect(migrated.version).toBe(6)
     expect(Object.keys(migrated.mastery)).toHaveLength(18)
     expect(migrated.settings.multiplicationEnabled).toBe(false)
     expect(migrated.attempts[0].skillId).toBeNull()
@@ -142,7 +165,7 @@ describe('repeatable point and reward rounds', () => {
     expect(currentLedger(migrated, DATE_KEY).points).toBe(0)
   })
 
-  it('migrates Phase 4 settings and an active round into Phase 5', () => {
+  it('migrates Phase 4 settings and an active round into Phase 6', () => {
     const phaseFour = createDefaultData(NOW) as unknown as Record<string, unknown>
     phaseFour.version = 4
     const settings = phaseFour.settings as Record<string, unknown>
@@ -157,15 +180,40 @@ describe('repeatable point and reward rounds', () => {
 
     const migrated = normaliseData(phaseFour, NOW)
 
-    expect(migrated.version).toBe(5)
+    expect(migrated.version).toBe(6)
     expect(migrated.settings.soundEffects).toBe(false)
     expect(migrated.settings.geometryEnabled).toBe(true)
     expect(migrated.settings.quantitiesEnabled).toBe(false)
     expect(currentLedger(migrated, DATE_KEY).missionSkin).toBe('number-trail')
+    expect(currentLedger(migrated, DATE_KEY).activeRewardId).toBe(migrated.rewardDefinitions[0].id)
   })
 
-  it('keeps mission cosmetics separate from points and resets the choice after redemption', () => {
-    let data = selectMissionSkin(createDefaultData(NOW), DATE_KEY, 'market-day')
+  it('turns the Phase 5 global reward into a selectable catalogue item', () => {
+    const phaseFive = createDefaultData(NOW) as unknown as Record<string, unknown>
+    phaseFive.version = 5
+    delete phaseFive.rewardDefinitions
+    delete phaseFive.collectedRewards
+    const settings = phaseFive.settings as Record<string, unknown>
+    settings.rewardLabel = 'Comic lesen'
+    settings.rewardMinutes = 15
+    settings.pointsGoal = 100
+    settings.schoolTopic = 'zahlen-bis-100'
+    const ledgers = phaseFive.ledgers as Record<string, Record<string, unknown>>
+    delete ledgers[DATE_KEY].activeRewardId
+    ledgers[DATE_KEY].points = 30
+    ledgers[DATE_KEY].missionSkin = 'number-trail'
+
+    const migrated = normaliseData(phaseFive, NOW)
+
+    expect(migrated.rewardDefinitions).toEqual([
+      expect.objectContaining({ label: 'Comic lesen', minutes: 15, pointsGoal: 100, schoolTopic: 'zahlen-bis-100' }),
+    ])
+    expect(currentLedger(migrated, DATE_KEY).activeRewardId).toBe(migrated.rewardDefinitions[0].id)
+    expect(currentLedger(migrated, DATE_KEY).points).toBe(30)
+  })
+
+  it('keeps mission cosmetics separate from points and resets the choice after collection', () => {
+    let data = selectMissionSkin(chooseDefaultReward(createDefaultData(NOW)), DATE_KEY, 'market-day')
     expect(currentLedger(data, DATE_KEY)).toMatchObject({ points: 0, missionSkin: 'market-day' })
 
     data = awardResolvedChallenge(data, {
@@ -186,8 +234,8 @@ describe('repeatable point and reward rounds', () => {
         hintUsed: false,
       })
     }
-    data = redeemReward(data, DATE_KEY)
-    expect(currentLedger(data, DATE_KEY)).toMatchObject({ points: 0, missionSkin: null })
+    data = collectActiveReward(data, DATE_KEY)
+    expect(currentLedger(data, DATE_KEY)).toMatchObject({ points: 0, activeRewardId: null, missionSkin: null })
   })
 
   it('turns a redeemed Phase 2 day into a fresh round with redemption history', () => {
@@ -213,5 +261,39 @@ describe('repeatable point and reward rounds', () => {
         rewardLabel: 'Gamen',
       }),
     ])
+    expect(migrated.collectedRewards).toEqual([
+      expect.objectContaining({
+        rewardId: null,
+        collectedAt: '2026-08-31T18:00:00.000Z',
+        redeemedAt: '2026-08-31T18:00:00.000Z',
+      }),
+    ])
+  })
+
+  it('stores a parent-defined reward with its own points and category', () => {
+    const initial = createDefaultData(NOW)
+    const data = addRewardDefinition(initial, {
+      id: 'comic',
+      label: 'Comic lesen',
+      minutes: 15,
+      pointsGoal: 100,
+      schoolTopic: 'zahlen-bis-100',
+    })
+
+    expect(data.rewardDefinitions).toContainEqual({
+      id: 'comic',
+      label: 'Comic lesen',
+      minutes: 15,
+      pointsGoal: 100,
+      schoolTopic: 'zahlen-bis-100',
+    })
+    const locked = addRewardDefinition(initial, {
+      id: 'multiplication',
+      label: 'Spiel wählen',
+      minutes: 10,
+      pointsGoal: 50,
+      schoolTopic: 'mal-teilen',
+    })
+    expect(selectRewardDefinition(locked, DATE_KEY, 'multiplication')).toBe(locked)
   })
 })

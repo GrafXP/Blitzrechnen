@@ -1,14 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { challengeForSession } from '../domain/challenges'
-import { createDefaultData, currentLedger } from '../domain/data'
+import { createDefaultData, currentLedger, selectMissionSkin, selectRewardDefinition } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
 import { MissionScreen } from './MissionScreen'
 
 describe('mission feedback', () => {
   it('shows a visual strategy after two attempts and accepts the correct answer', () => {
-    const data = createDefaultData()
+    let data = createDefaultData()
     const dateKey = zurichDateKey()
+    data = selectRewardDefinition(data, dateKey, data.rewardDefinitions[0].id)
+    data = selectMissionSkin(data, dateKey, 'number-trail')
     const challenge = challengeForSession(data, dateKey, 0)
     const commit = vi.fn()
     render(

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { awardResolvedChallenge, createDefaultData, redeemReward } from '../domain/data'
+import { addRewardDefinition, awardResolvedChallenge, collectActiveReward, createDefaultData, selectRewardDefinition } from '../domain/data'
+import { skillById } from '../curriculum/skills'
 import { availableSkills, challengeForSession, isDue } from './selector'
 
 describe('adaptive challenge selection', () => {
@@ -12,6 +13,7 @@ describe('adaptive challenge selection', () => {
 
   it('builds a varied first mission and records mastery evidence', () => {
     let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = selectRewardDefinition(data, '2026-09-01', data.rewardDefinitions[0].id)
     const skillIds = new Set<string>()
 
     for (let index = 0; index < 10; index += 1) {
@@ -37,6 +39,7 @@ describe('adaptive challenge selection', () => {
     const rounds: Array<Array<{ skillId: string; form: string }>> = []
 
     for (let round = 0; round < 4; round += 1) {
+      data = selectRewardDefinition(data, '2026-09-01', data.rewardDefinitions[0].id)
       const tasks: Array<{ skillId: string; form: string }> = []
       for (let index = 0; index < 10; index += 1) {
         const challenge = challengeForSession(data, '2026-09-01', index)
@@ -55,7 +58,7 @@ describe('adaptive challenge selection', () => {
         })
       }
       rounds.push(tasks)
-      data = redeemReward(data, '2026-09-01', `2026-09-01T${10 + round}:30:00.000Z`)
+      data = collectActiveReward(data, '2026-09-01', `2026-09-01T${10 + round}:30:00.000Z`)
     }
 
     rounds.forEach((tasks) => {
@@ -67,6 +70,23 @@ describe('adaptive challenge selection', () => {
       const repeatedForms = rounds[round].filter((task) => previousForms.has(task.form))
       expect(sameSlots.length).toBeLessThanOrEqual(3)
       expect(repeatedForms.length).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('keeps every task inside the category of the chosen reward', () => {
+    let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = addRewardDefinition(data, {
+      id: 'plus-reward',
+      label: 'Comic lesen',
+      minutes: 15,
+      pointsGoal: 100,
+      schoolTopic: 'plus-minus',
+    })
+    data = selectRewardDefinition(data, '2026-09-01', 'plus-reward')
+
+    for (let index = 0; index < 20; index += 1) {
+      const challenge = challengeForSession(data, '2026-09-01', index)
+      expect(skillById(challenge.skillId).topics).toContain('plus-minus')
     }
   })
 

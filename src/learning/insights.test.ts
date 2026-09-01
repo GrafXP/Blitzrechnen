@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { awardResolvedChallenge, createDefaultData, redeemReward, updateSettings } from '../domain/data'
+import { awardResolvedChallenge, collectActiveReward, createDefaultData, selectRewardDefinition } from '../domain/data'
 import { sevenDayInsights, skillsNeedingReview } from './insights'
 
 describe('seven-day parent insights', () => {
   it('groups tasks, first tries, hints, and rewards across seven calendar days', () => {
-    let data = updateSettings(createDefaultData(new Date('2026-09-01T10:00:00.000Z')), { pointsGoal: 50 })
+    let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = {
+      ...data,
+      rewardDefinitions: data.rewardDefinitions.map((reward) => ({ ...reward, pointsGoal: 50 })),
+    }
+    data = selectRewardDefinition(data, '2026-08-30', data.rewardDefinitions[0].id)
     for (let index = 0; index < 5; index += 1) {
       data = awardResolvedChallenge(data, {
         challengeId: `2026-08-30:addition:${index}`,
@@ -16,7 +21,7 @@ describe('seven-day parent insights', () => {
         completedAt: `2026-08-30T10:0${index}:00.000Z`,
       })
     }
-    data = redeemReward(data, '2026-08-30', '2026-08-30T11:00:00.000Z')
+    data = collectActiveReward(data, '2026-08-30', '2026-08-30T11:00:00.000Z')
 
     const week = sevenDayInsights(data, '2026-09-01')
     expect(week).toHaveLength(7)
@@ -28,6 +33,7 @@ describe('seven-day parent insights', () => {
 
   it('uses supportive review candidates only after a skill has been practised', () => {
     let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = selectRewardDefinition(data, '2026-09-01', data.rewardDefinitions[0].id)
     expect(skillsNeedingReview(data, '2026-09-01')).toEqual([])
     data = awardResolvedChallenge(data, {
       challengeId: '2026-09-01:addition:0',

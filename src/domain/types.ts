@@ -34,9 +34,31 @@ export interface DailyLedger {
   dateKey: string
   round: number
   points: number
+  activeRewardId: string | null
   missionSkin: MissionSkin | null
   awardedChallengeIds: string[]
   redemptions: RewardRedemption[]
+}
+
+export interface RewardDefinition {
+  id: string
+  label: string
+  minutes: number
+  pointsGoal: number
+  schoolTopic: SchoolTopic
+}
+
+export interface CollectedReward {
+  id: string
+  rewardId: string | null
+  dateKey: string
+  round: number
+  collectedAt: string
+  redeemedAt: string | null
+  rewardLabel: string
+  rewardMinutes: number
+  points: number
+  schoolTopic: SchoolTopic
 }
 
 export interface RewardRedemption {
@@ -60,9 +82,11 @@ export interface Attempt {
 }
 
 export interface AppData {
-  version: 5
+  version: 6
   settings: AppSettings
   security: ParentSecurity
+  rewardDefinitions: RewardDefinition[]
+  collectedRewards: CollectedReward[]
   ledgers: Record<string, DailyLedger>
   attempts: Attempt[]
   mastery: Record<SkillId, MasteryState>

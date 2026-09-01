@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
-import { currentLedger, updateSettings } from '../domain/data'
+import { addRewardDefinition, currentLedger, hasReachedGoal, removeRewardDefinition, updateSettings } from '../domain/data'
 import { zurichDateKey } from '../domain/date'
-import type { AppData, AppSettings } from '../domain/types'
+import { formatReward, SCHOOL_TOPICS, schoolTopicEnabled, schoolTopicLabel } from '../domain/reward'
+import type { AppData, AppSettings, SchoolTopic } from '../domain/types'
 import { createPin, validPin } from '../security/pin'
 import { SKILLS } from '../curriculum/skills'
 import { skillById } from '../curriculum/skills'
@@ -26,6 +27,13 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
   const [newPin, setNewPin] = useState('')
   const [newPinAgain, setNewPinAgain] = useState('')
   const [pinMessage, setPinMessage] = useState<string | null>(null)
+  const [rewardMessage, setRewardMessage] = useState<string | null>(null)
+  const [newReward, setNewReward] = useState({
+    label: '',
+    minutes: 15,
+    pointsGoal: 100,
+    schoolTopic: 'zahlen-bis-100' as SchoolTopic,
+  })
   const dateKey = zurichDateKey()
   const ledger = currentLedger(data, dateKey)
   const roundAttempts = useMemo(
@@ -46,6 +54,8 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
     { tasks: 0, firstTry: 0, hints: 0, rewards: 0 },
   ), [week])
   const maxDayTasks = Math.max(1, ...week.map((day) => day.tasks))
+  const collectedToday = data.collectedRewards.filter((reward) => reward.dateKey === dateKey)
+  const pendingRewards = data.collectedRewards.filter((reward) => !reward.redeemedAt)
 
   useEffect(() => setSettings(data.settings), [data.settings])
 
@@ -95,7 +105,7 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
   }
 
   const firstTry = roundAttempts.filter((attempt) => attempt.wrongAnswers === 0).length
-  const reachedGoal = ledger.points >= data.settings.pointsGoal
+  const reachedGoal = hasReachedGoal(data, dateKey)
   const setUnlock = (
     key: 'quantitiesEnabled' | 'geometryEnabled' | 'multiplicationEnabled',
     topic: AppSettings['schoolTopic'],
@@ -106,6 +116,24 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
       [key]: checked,
       schoolTopic: !checked && current.schoolTopic === topic ? 'zahlen-bis-100' : current.schoolTopic,
     }))
+  }
+
+  const addReward = () => {
+    if (!newReward.label.trim()) {
+      setRewardMessage('Bitte gib der Belohnung einen Namen.')
+      return
+    }
+    if (!schoolTopicEnabled(settings, newReward.schoolTopic)) {
+      setRewardMessage('Bitte schalte diese Mathe-Kategorie zuerst frei.')
+      return
+    }
+    commit((current) => addRewardDefinition(current, newReward))
+    setNewReward((current) => ({ ...current, label: '' }))
+    setRewardMessage('Belohnung hinzugefügt.')
+  }
+
+  const removeReward = (rewardId: string) => {
+    commit((current) => removeRewardDefinition(current, rewardId))
   }
 
   return (
@@ -120,19 +148,19 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
         <section className="parent-panel parent-panel--summary">
           <div className="section-heading">
             <div><p className="eyebrow">Heute</p><h2>Kurzer Überblick</h2></div>
-            <span className={ledger.redemptions.length ? 'status-chip status-chip--done' : 'status-chip'}>
+            <span className={pendingRewards.length ? 'status-chip' : 'status-chip status-chip--done'}>
               {reachedGoal
                 ? 'Belohnung bereit'
-                : ledger.redemptions.length
-                  ? `${ledger.redemptions.length}× eingelöst`
-                  : 'Belohnung offen'}
+                : pendingRewards.length
+                  ? `${pendingRewards.length} zum Einlösen`
+                  : 'Alles eingelöst'}
             </span>
           </div>
           <div className="stat-grid">
             <div><strong>{ledger.points}</strong><span>Punkte dieser Runde</span></div>
             <div><strong>{roundAttempts.length}</strong><span>Aufgaben dieser Runde</span></div>
             <div><strong>{roundAttempts.length ? Math.round((firstTry / roundAttempts.length) * 100) : 0}%</strong><span>direkt gelöst</span></div>
-            <div><strong>{ledger.redemptions.length}</strong><span>heute eingelöst</span></div>
+            <div><strong>{collectedToday.length}</strong><span>heute gesammelt</span></div>
           </div>
         </section>
 
@@ -193,16 +221,53 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
 
         <form className="parent-panel settings-form" onSubmit={save}>
           <div className="section-heading">
-            <div><p className="eyebrow">Tagesplan</p><h2>Ziel und Belohnung</h2></div>
+            <div><p className="eyebrow">Belohnungsliste</p><h2>Belohnungen festlegen</h2></div>
             <GiftIcon />
           </div>
 
-          <div className="form-grid">
+          <p className="settings-note">Jede Belohnung hat ihr eigenes Punkteziel und eine Mathe-Kategorie. Das Kind wählt vor der Mission selbst aus der Liste.</p>
+
+          <div className="parent-reward-list">
+            {data.rewardDefinitions.map((reward) => {
+              const inProgress = Object.values(data.ledgers).some(
+                (entry) => entry.activeRewardId === reward.id && entry.points > 0,
+              )
+              return (
+                <article className="parent-reward-item" key={reward.id}>
+                  <div>
+                    <strong>{formatReward(reward)}</strong>
+                    <span>{reward.pointsGoal} Punkte · {schoolTopicLabel(reward.schoolTopic)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="button button--ghost button--compact"
+                    disabled={data.rewardDefinitions.length <= 1 || inProgress}
+                    onClick={() => removeReward(reward.id)}
+                    aria-label={`${formatReward(reward)} entfernen`}
+                  >Entfernen</button>
+                </article>
+              )
+            })}
+          </div>
+
+          <div className="settings-divider" />
+          <h3>Neue Belohnung</h3>
+          <div className="form-grid reward-definition-form">
+            <label className="field field--wide">
+              <span>Belohnung</span>
+              <input
+                maxLength={40}
+                value={newReward.label}
+                onChange={(event) => setNewReward({ ...newReward, label: event.target.value })}
+                placeholder="z. B. Comic lesen"
+              />
+            </label>
             <label className="field">
               <span>Punkteziel</span>
               <select
-                value={settings.pointsGoal}
-                onChange={(event) => setSettings({ ...settings, pointsGoal: Number(event.target.value) })}
+                aria-label="Punkteziel"
+                value={newReward.pointsGoal}
+                onChange={(event) => setNewReward({ ...newReward, pointsGoal: Number(event.target.value) })}
               >
                 {Array.from({ length: 16 }, (_, index) => 50 + index * 10).map((goal) => (
                   <option key={goal} value={goal}>{goal} Punkte ({goal / 10} Aufgaben)</option>
@@ -212,8 +277,9 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
             <label className="field">
               <span>Dauer</span>
               <select
-                value={settings.rewardMinutes}
-                onChange={(event) => setSettings({ ...settings, rewardMinutes: Number(event.target.value) })}
+                aria-label="Dauer"
+                value={newReward.minutes}
+                onChange={(event) => setNewReward({ ...newReward, minutes: Number(event.target.value) })}
               >
                 {[0, 10, 15, 20, 30, 45, 60].map((minutes) => (
                   <option key={minutes} value={minutes}>{minutes === 0 ? 'Keine Dauer' : `${minutes} Minuten`}</option>
@@ -221,14 +287,27 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
               </select>
             </label>
             <label className="field field--wide">
-              <span>Belohnung</span>
-              <input
-                maxLength={40}
-                value={settings.rewardLabel}
-                onChange={(event) => setSettings({ ...settings, rewardLabel: event.target.value })}
-                placeholder="z. B. Gamen"
-              />
+              <span>Mathe-Kategorie</span>
+              <select
+                aria-label="Mathe-Kategorie"
+                value={newReward.schoolTopic}
+                onChange={(event) => setNewReward({ ...newReward, schoolTopic: event.target.value as SchoolTopic })}
+              >
+                {SCHOOL_TOPICS.map((topic) => (
+                  <option
+                    key={topic.id}
+                    value={topic.id}
+                    disabled={(topic.id === 'groessen-sachrechnen' && !settings.quantitiesEnabled)
+                      || (topic.id === 'formen-symmetrie' && !settings.geometryEnabled)
+                      || (topic.id === 'mal-teilen' && !settings.multiplicationEnabled)}
+                  >{topic.label}</option>
+                ))}
+              </select>
             </label>
+            <div className="reward-add-row field--wide">
+              {rewardMessage && <span className={rewardMessage.includes('hinzugefügt') ? 'save-confirmation' : 'form-error'} role="status">{rewardMessage}</span>}
+              <button className="button button--primary" type="button" onClick={addReward}>Belohnung hinzufügen</button>
+            </div>
           </div>
 
           <div className="settings-divider" />
@@ -254,21 +333,6 @@ export function ParentScreen({ data, commit, onHome }: ParentScreenProps) {
               onChange={(checked) => setUnlock('multiplicationEnabled', 'mal-teilen', checked)}
             />
           </div>
-
-          <label className="field field--wide">
-            <span>Aktuelles Schulthema</span>
-            <select
-              value={settings.schoolTopic}
-              onChange={(event) => setSettings({ ...settings, schoolTopic: event.target.value as AppSettings['schoolTopic'] })}
-            >
-              <option value="zahlen-bis-100">Zahlen bis 100</option>
-              <option value="plus-minus">Plus und Minus</option>
-              <option value="verdoppeln-halbieren">Verdoppeln und Halbieren</option>
-              <option value="groessen-sachrechnen" disabled={!settings.quantitiesEnabled}>Geld, Uhr, Längen und Sachrechnen</option>
-              <option value="formen-symmetrie" disabled={!settings.geometryEnabled}>Figuren und Symmetrie</option>
-              <option value="mal-teilen" disabled={!settings.multiplicationEnabled}>Mal und Teilen</option>
-            </select>
-          </label>
 
           <div className="settings-divider" />
           <h3>Darstellung und Unterstützung</h3>

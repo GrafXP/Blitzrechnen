@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { awardResolvedChallenge, createDefaultData, currentLedger } from '../domain/data'
+import { awardResolvedChallenge, createDefaultData, currentLedger, selectRewardDefinition } from '../domain/data'
 import type { ChallengeRepresentation, SkillId } from '../domain/types'
 import { masteryBadges } from './badges'
 
@@ -25,6 +25,7 @@ function practise(
 describe('personal mastery badges', () => {
   it('derives cosmetics from mastery without changing reward points', () => {
     let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = selectRewardDefinition(data, DATE_KEY, data.rewardDefinitions[0].id)
     for (let index = 0; index < 4; index += 1) data = practise(data, 'addition', index)
 
     const earned = masteryBadges(data).filter((badge) => badge.earned).map((badge) => badge.id)
@@ -35,6 +36,7 @@ describe('personal mastery badges', () => {
 
   it('unlocks the explorer badge through varied learning evidence', () => {
     let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = selectRewardDefinition(data, DATE_KEY, data.rewardDefinitions[0].id)
     const skills: SkillId[] = ['number-recognition', 'place-value', 'number-order', 'count-steps', 'addition', 'subtraction']
     skills.forEach((skillId, index) => { data = practise(data, skillId, index) })
     expect(masteryBadges(data).find((badge) => badge.id === 'explorer')?.earned).toBe(true)

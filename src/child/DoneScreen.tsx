@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
 import { playFinishSound } from '../accessibility/sound'
-import { redeemReward } from '../domain/data'
+import { activeRewardDefinition, collectActiveReward } from '../domain/data'
 import { formatReward } from '../domain/reward'
 import type { AppData, DailyLedger } from '../domain/types'
-import { CheckIcon, GiftIcon, ParentIcon } from '../components/Icons'
-import { ParentGate } from '../parent/ParentGate'
+import { CheckIcon, GiftIcon } from '../components/Icons'
 import { missionById } from '../game/missions'
 import { MissionMap } from './MissionMap'
 
@@ -14,22 +13,23 @@ interface DoneScreenProps {
   ledger: DailyLedger
   dateKey: string
   commit: DataCommit
-  onHome: () => void
+  onCollected: () => void
 }
 
-export function DoneScreen({ data, ledger, dateKey, commit, onHome }: DoneScreenProps) {
-  const [gateOpen, setGateOpen] = useState(false)
+export function DoneScreen({ data, ledger, dateKey, commit, onCollected }: DoneScreenProps) {
   const mission = missionById(ledger.missionSkin)
+  const reward = activeRewardDefinition(data, dateKey)
 
   useEffect(() => {
     if (data.settings.soundEffects) playFinishSound()
   }, [data.settings.soundEffects])
 
-  const redeem = () => {
-    commit((current) => redeemReward(current, dateKey))
-    setGateOpen(false)
-    onHome()
+  const collect = () => {
+    commit((current) => collectActiveReward(current, dateKey))
+    onCollected()
   }
+
+  if (!reward) return null
 
   return (
     <main className={`done-shell done-shell--${mission.id}`}>
@@ -37,33 +37,22 @@ export function DoneScreen({ data, ledger, dateKey, commit, onHome }: DoneScreen
         <div className="finish-badge" aria-hidden="true"><CheckIcon /></div>
         <p className="eyebrow">Missionsziel erreicht</p>
         <h1>Stark gerechnet!</h1>
-        <p>Du hast den {mission.destination} erreicht und {data.settings.pointsGoal} Punkte gesammelt. Nach dem Einlösen wartet eine neue Mission auf dich.</p>
+        <p>Du hast den {mission.destination} erreicht und {reward.pointsGoal} Punkte gesammelt. Lege die Belohnung in deine Sammlung – danach kannst du gleich eine neue Mission wählen.</p>
 
-        <MissionMap missionSkin={mission.id} points={ledger.points} goal={data.settings.pointsGoal} compact />
+        <MissionMap missionSkin={mission.id} points={ledger.points} goal={reward.pointsGoal} compact />
 
         <div className="voucher">
           <div className="voucher__icon"><GiftIcon /></div>
           <span>Deine Belohnung</span>
-          <strong>{formatReward(data.settings)}</strong>
+          <strong>{formatReward(reward)}</strong>
           <small>Runde {ledger.round + 1}</small>
         </div>
 
-        <button className="button button--primary button--large" onClick={() => setGateOpen(true)}>
-          <ParentIcon /> Mit Elternteil einlösen
+        <button className="button button--primary button--large" onClick={collect}>
+          <GiftIcon /> Belohnung sammeln
         </button>
-        <button className="button button--ghost" onClick={onHome}>Zurück zum Start</button>
+        <p className="calm-finish"><span><CheckIcon /></span>Zum Sammeln brauchst du keinen Erwachsenen.</p>
       </section>
-
-      {gateOpen && (
-        <ParentGate
-          data={data}
-          commit={commit}
-          title="Belohnung einlösen"
-          actionLabel="Einlösen & neue Mission"
-          onUnlocked={redeem}
-          onCancel={() => setGateOpen(false)}
-        />
-      )}
     </main>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { DataCommit } from '../app/usePersistentData'
 import { speak } from '../accessibility/speech'
 import { playSuccessSound } from '../accessibility/sound'
-import { awardResolvedChallenge } from '../domain/data'
+import { activePointsGoal, awardResolvedChallenge } from '../domain/data'
 import { challengeForSession } from '../domain/challenges'
 import type { AppData, DailyLedger } from '../domain/types'
 import { ArrowLeftIcon, BackspaceIcon, CheckIcon, SpeakerIcon } from '../components/Icons'
@@ -21,15 +21,16 @@ interface MissionScreenProps {
 
 export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }: MissionScreenProps) {
   const mission = missionById(ledger.missionSkin)
+  const pointsGoal = activePointsGoal(data, dateKey)
   const initialIndex = ledger.awardedChallengeIds.length
-  const [startedAtGoal] = useState(ledger.points >= data.settings.pointsGoal)
+  const [startedAtGoal] = useState(ledger.points >= pointsGoal)
   const [challengeIndex, setChallengeIndex] = useState(initialIndex)
   const [challenge, setChallenge] = useState(() => challengeForSession(data, dateKey, initialIndex))
   const [answer, setAnswer] = useState('')
   const [wrongAnswers, setWrongAnswers] = useState(0)
   const [resolved, setResolved] = useState(false)
   const showHint = wrongAnswers >= 2
-  const displayedPoints = Math.min(data.settings.pointsGoal, ledger.points)
+  const displayedPoints = Math.min(pointsGoal, ledger.points)
 
   useEffect(() => {
     if (data.settings.readAloud) speak(challenge.spokenPrompt)
@@ -72,7 +73,7 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
   }
 
   const next = () => {
-    if (ledger.points >= data.settings.pointsGoal) {
+    if (ledger.points >= pointsGoal) {
       onDone()
       return
     }
@@ -90,10 +91,10 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
         <button className="icon-button" onClick={onExit} aria-label="Mission verlassen"><ArrowLeftIcon /></button>
         <div className="mission-progress">
           <div className="mission-progress__labels">
-            <span>{mission.name} · {challenge.skillLabel}</span><strong>{displayedPoints} / {data.settings.pointsGoal}</strong>
+            <span>{mission.name} · {challenge.skillLabel}</span><strong>{displayedPoints} / {pointsGoal}</strong>
           </div>
-          <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={data.settings.pointsGoal} aria-valuenow={displayedPoints}>
-            <span style={{ width: `${(displayedPoints / data.settings.pointsGoal) * 100}%` }} />
+          <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={pointsGoal} aria-valuenow={displayedPoints}>
+            <span style={{ width: `${(displayedPoints / pointsGoal) * 100}%` }} />
           </div>
         </div>
         <button
@@ -106,7 +107,7 @@ export function MissionScreen({ data, ledger, dateKey, commit, onExit, onDone }:
       <MissionMap
         missionSkin={mission.id}
         points={ledger.points}
-        goal={data.settings.pointsGoal}
+        goal={pointsGoal}
       />
 
       <section className="challenge-card">

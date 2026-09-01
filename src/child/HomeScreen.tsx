@@ -1,5 +1,6 @@
 import { friendlyZurichDate } from '../domain/date'
 import { formatReward } from '../domain/reward'
+import { activeRewardDefinition } from '../domain/data'
 import type { AppData, DailyLedger } from '../domain/types'
 import { GiftIcon, InstallIcon, ParentIcon } from '../components/Icons'
 import { ProgressRing } from '../components/ProgressRing'
@@ -12,6 +13,7 @@ interface HomeScreenProps {
   ledger: DailyLedger
   online: boolean
   onStart: () => void
+  onRewards: () => void
   onParent: () => void
   onInstall: () => void
 }
@@ -21,11 +23,15 @@ export function HomeScreen({
   ledger,
   online,
   onStart,
+  onRewards,
   onParent,
   onInstall,
 }: HomeScreenProps) {
-  const reachedGoal = ledger.points >= data.settings.pointsGoal
-  const redeemedCount = ledger.redemptions.length
+  const activeReward = activeRewardDefinition(data, ledger.dateKey)
+  const pointsGoal = activeReward?.pointsGoal ?? data.settings.pointsGoal
+  const reachedGoal = activeReward !== null && ledger.points >= pointsGoal
+  const pendingCount = data.collectedRewards.filter((reward) => !reward.redeemedAt).length
+  const redeemedCount = data.collectedRewards.filter((reward) => reward.redeemedAt).length
   const mission = missionById(ledger.missionSkin)
   const topic = {
     'zahlen-bis-100': {
@@ -54,7 +60,7 @@ export function HomeScreen({
         ? 'Punktefelder lesen und Mengen fair aufteilen.'
         : 'Sachaufgaben üben. Mal und Teilen ist noch gesperrt.',
     },
-  }[data.settings.schoolTopic]
+  }[activeReward?.schoolTopic ?? data.settings.schoolTopic]
 
   return (
     <main className="home-shell">
@@ -75,7 +81,9 @@ export function HomeScreen({
         <div className="hero-copy">
           <p className="eyebrow">{ledger.missionSkin ? `Deine Mission · ${mission.name}` : 'Dein Missionsziel'}</p>
           <h2>
-            {reachedGoal
+            {!activeReward
+              ? 'Welche Belohnung möchtest du?'
+              : reachedGoal
               ? 'Deine Belohnung wartet.'
               : ledger.points > 0
                 ? 'Weiter so, du bist unterwegs!'
@@ -84,15 +92,17 @@ export function HomeScreen({
                   : 'Bereit für deinen Zahlenweg?'}
           </h2>
           <p>
-            {redeemedCount > 0 && !reachedGoal && ledger.points === 0
-              ? `Heute schon ${redeemedCount} ${redeemedCount === 1 ? 'Belohnung' : 'Belohnungen'} eingelöst. Du kannst direkt wieder Punkte sammeln.`
+            {!activeReward
+              ? 'Wähle eine Belohnung aus der Liste und sammle dafür Punkte in einer Mathe-Kategorie.'
+              : pendingCount > 0 && !reachedGoal && ledger.points === 0
+              ? `Du hast ${pendingCount} ${pendingCount === 1 ? 'Belohnung' : 'Belohnungen'} gesammelt. Du kannst direkt die nächste Mission machen.`
               : 'Löse kurze Aufgaben und sammle dabei Punkte für deine Belohnung.'}
           </p>
           <button className="button button--primary button--large" onClick={onStart}>
-            {reachedGoal ? 'Belohnung ansehen' : ledger.points ? 'Weiterrechnen' : 'Mission starten'}
+            {!activeReward ? 'Belohnung wählen' : reachedGoal ? 'Belohnung sammeln' : ledger.points ? 'Weiterrechnen' : 'Mission starten'}
           </button>
         </div>
-        <ProgressRing points={ledger.points} goal={data.settings.pointsGoal} />
+        {activeReward && <ProgressRing points={ledger.points} goal={pointsGoal} />}
         <div className="mountain-scene" aria-hidden="true">
           <span className="sun" />
           <span className="mountain mountain--back" />
@@ -103,22 +113,22 @@ export function HomeScreen({
         </div>
       </section>
 
-      <section className="reward-card" aria-label="Heutige Belohnung">
+      <button className="reward-card reward-card--button" aria-label="Meine Belohnungen öffnen" onClick={onRewards}>
         <div className="reward-card__icon"><GiftIcon /></div>
         <div>
-          <span>Deine Belohnung</span>
-          <strong>{formatReward(data.settings)}</strong>
+          <span>{activeReward ? 'Dein nächstes Ziel' : 'Deine Belohnungen'}</span>
+          <strong>{activeReward ? formatReward(activeReward) : `${pendingCount} gesammelt · ${redeemedCount} eingelöst`}</strong>
         </div>
         <span className="reward-card__status">
-          {reachedGoal ? 'bereit' : redeemedCount > 0 ? `${redeemedCount}× eingelöst` : 'bei Ziel'}
+          {reachedGoal ? 'bereit' : pendingCount > 0 ? `${pendingCount} offen` : activeReward ? `${pointsGoal} Punkte` : 'ansehen'}
         </span>
-      </section>
+      </button>
 
       {ledger.missionSkin && (
         <MissionMap
           missionSkin={ledger.missionSkin}
           points={ledger.points}
-          goal={data.settings.pointsGoal}
+          goal={pointsGoal}
           compact
         />
       )}
@@ -136,6 +146,7 @@ export function HomeScreen({
 
       <footer className="home-footer">
         <button className="text-button" onClick={onInstall}><InstallIcon /> App installieren</button>
+        <button className="text-button" onClick={onRewards}><GiftIcon /> Meine Belohnungen</button>
         <button className="text-button" onClick={onParent}><ParentIcon /> Elternbereich</button>
       </footer>
     </main>

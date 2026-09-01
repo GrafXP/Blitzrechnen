@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { createDefaultData } from '../domain/data'
+import { createDefaultData, selectRewardDefinition } from '../domain/data'
 import { MissionPicker } from './MissionPicker'
 
 describe('mission picker', () => {
   it('offers three equivalent skins and stores the chosen mission', () => {
-    const data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    let data = createDefaultData(new Date('2026-09-01T10:00:00.000Z'))
+    data = selectRewardDefinition(data, '2026-09-01', data.rewardDefinitions[0].id)
     const commit = vi.fn()
     const onSelected = vi.fn()
     render(

@@ -178,10 +178,16 @@ async function chooseMission(page: Page, name = 'Zahlenweg') {
   await expect(page.getByLabel(new RegExp(`${name}: 0 von`))).toBeVisible()
 }
 
-test('redeems a reward and immediately starts a fresh same-day round', async ({ page }) => {
+async function chooseReward(page: Page, name = '30 Min. Gamen') {
+  await expect(page.getByRole('heading', { name: 'Welche Belohnung möchtest du sammeln?' })).toBeVisible()
+  await page.getByRole('button', { name: new RegExp(name) }).click()
+}
+
+test('collects rewards freely and lets a parent redeem them later', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Mathe-Mission' })).toBeVisible()
-  await page.getByRole('button', { name: 'Mission starten' }).click()
+  await page.getByRole('button', { name: 'Belohnung wählen' }).click()
+  await chooseReward(page)
   await chooseMission(page)
 
   await solveCurrentChallenge(page)
@@ -198,18 +204,28 @@ test('redeems a reward and immediately starts a fresh same-day round', async ({ 
 
   await expect(page.getByRole('heading', { name: 'Stark gerechnet!' })).toBeVisible()
   await expect(page.getByText('30 Min. Gamen')).toBeVisible()
+  await page.getByRole('button', { name: /Belohnung sammeln/ }).click()
+
+  await expect(page.getByRole('heading', { name: 'Gesammelte Belohnungen' })).toBeVisible()
+  await expect(page.getByText('Bereit zum Einlösen')).toBeVisible()
+
+  // A new mission can be chosen before an adult redeems the collected reward.
+  await chooseReward(page)
+  await expect(page.getByRole('heading', { name: 'Welche Mission möchtest du?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Zurück zum Start' }).click()
+  await page.getByRole('button', { name: 'Meine Belohnungen' }).last().click()
   await page.getByRole('button', { name: /Mit Elternteil einlösen/ }).click()
 
   await page.getByLabel('Neue PIN', { exact: true }).fill('2468')
   await page.getByLabel('PIN wiederholen').fill('2468')
   await page.getByRole('button', { name: 'PIN speichern' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Mathe-Mission' })).toBeVisible()
-  await expect(page.getByRole('progressbar', { name: '0 von 100 Punkten' })).toBeVisible()
-  await expect(page.getByText('1× eingelöst')).toBeVisible()
-  await expect(page.getByText(/Heute schon 1 Belohnung eingelöst/)).toBeVisible()
+  await expect(page.getByText('Eingelöst')).toBeVisible()
+  await expect(page.getByText('Bereit zum Einlösen')).not.toBeVisible()
 
   await page.reload()
+  await expect(page.getByText('Eingelöst')).toBeVisible()
+  await page.getByRole('button', { name: 'Zurück zum Start' }).click()
   await expect(page.getByRole('progressbar', { name: '0 von 100 Punkten' })).toBeVisible()
   await page.getByRole('button', { name: 'Mission starten' }).click()
   await chooseMission(page, 'Markttag')
@@ -222,7 +238,7 @@ test('redeems a reward and immediately starts a fresh same-day round', async ({ 
   await page.getByLabel('PIN', { exact: true }).fill('2468')
   await page.getByRole('button', { name: 'Öffnen' }).click()
   await expect(page.getByRole('heading', { name: 'Elternübersicht' })).toBeVisible()
-  await expect(page.getByText('1× eingelöst')).toBeVisible()
+  await expect(page.locator('.stat-grid > div').filter({ hasText: 'heute gesammelt' })).toContainText('1')
   await expect(page.getByText('Punkte dieser Runde')).toBeVisible()
   const masteryValues = await page.locator('.mastery-track').evaluateAll((elements) =>
     elements.map((element) => Number(element.getAttribute('aria-valuenow'))),
@@ -238,13 +254,17 @@ test('a parent can unlock conceptual multiplication and sharing', async ({ page 
   await page.getByLabel('PIN wiederholen').fill('2468')
   await page.getByRole('button', { name: 'PIN speichern' }).click()
 
-  await page.getByLabel('Punkteziel').selectOption('200')
   await page.getByRole('checkbox', { name: /^Mal und Teilen/ }).check()
-  await page.getByLabel('Aktuelles Schulthema').selectOption('mal-teilen')
+  await page.getByLabel('Belohnung').fill('Comic lesen')
+  await page.getByLabel('Dauer', { exact: true }).selectOption('15')
+  await page.getByLabel('Punkteziel').selectOption('100')
+  await page.getByLabel('Mathe-Kategorie').selectOption('mal-teilen')
+  await page.getByRole('button', { name: 'Belohnung hinzufügen' }).click()
+  await expect(page.getByText('15 Min. Comic lesen')).toBeVisible()
   await page.getByRole('button', { name: 'Einstellungen speichern' }).click()
   await page.getByRole('button', { name: 'Zurück zum Start' }).click()
-  await expect(page.getByRole('heading', { name: 'Mal und Teilen' })).toBeVisible()
-  await page.getByRole('button', { name: 'Mission starten' }).click()
+  await page.getByRole('button', { name: 'Belohnung wählen' }).click()
+  await chooseReward(page, '15 Min. Comic lesen')
   await chooseMission(page, 'Formenwerkstatt')
 
   let sawConceptualModel = false
@@ -265,7 +285,8 @@ test('loads the app shell offline after the first visit', async ({ page, context
   try {
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Mathe-Mission' })).toBeVisible()
-    await page.getByRole('button', { name: 'Mission starten' }).click()
+    await page.getByRole('button', { name: 'Belohnung wählen' }).click()
+    await chooseReward(page)
     await chooseMission(page)
     await expect(page.getByText('Aufgabe 1')).toBeVisible()
   } finally {

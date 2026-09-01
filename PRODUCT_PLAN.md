@@ -1,6 +1,6 @@
 # Mobile Mathematics Trainer — Product and Delivery Plan
 
-Status: Phases 1–4 implemented; Phase 4 was intentionally delivered before Phase 3. The family-pilot phase remains proposed. Reward model revised 31 August 2026 for repeatable, parent-approved rounds.
+Status: Phases 1–4 implemented; Phase 4 was intentionally delivered before Phase 3. The family-pilot phase remains proposed. Reward model revised 1 September 2026 for child-collected rewards and later parent redemption.
 Working title: **Mathe-Mission** (final name should be chosen with the child)
 
 ## 1. Product decision
@@ -11,12 +11,12 @@ The first release should be:
 
 - **aligned to the skills and progression of the current _Schweizer Zahlenbuch 2_**, but use independently written questions, visuals, stories, and code;
 - **local-first and private**: no account, advertising, tracking, social features, or backend;
-- based on a repeatable reward round: **start a mission → solve adaptive tasks → reach the point goal → claim one real-life reward → begin a fresh round**;
-- controlled by a small parent area where the goal, reward, current school topic, and accessibility options can be changed;
-- parent-paced: reaching the goal stops the scored round, and only a PIN-protected parent redemption opens a fresh round;
-- repeatable on the same day: there is no hard-coded one-voucher-per-day limit, but the child cannot reset or open the next round without a parent.
+- based on a repeatable reward round: **choose a reward → start a mission → solve tasks from its maths category → reach the point goal → collect the reward → begin a fresh round**;
+- controlled by a small parent area where a catalogue of rewards, their goals/categories, content unlocks, and accessibility options can be changed;
+- child-paced: reaching the goal stops that scored round, but the child can collect the finished reward and choose another mission without a PIN;
+- parent-redeemed: each collected reward remains visibly open until an adult redeems that individual item through the PIN gate.
 
-Recommended default: **100 points = 30 minutes of gaming**. The parent can set 50–200 points and replace the reward text. Every completed round produces one voucher; redeeming it records the reward, resets active progress to zero, and makes another round available immediately.
+Recommended default: **100 points in “Zahlen bis 100” = 30 minutes of gaming**. A parent can create a list such as “15 minutes reading a comic — 100 points — Zahlen bis 100”. The child chooses one option before each round. Completing the round stores an immutable reward snapshot, resets active progress, and makes another round available immediately; later catalogue changes do not alter already collected items.
 
 ## 2. What the research implies
 
@@ -39,19 +39,19 @@ Interactive apps show useful but still mixed evidence for early learning, with t
 - short, spaced review across days instead of long drill sessions;
 - points for resolving a task, while a separate mastery model—not visible status—uses first-try accuracy and hints to schedule review.
 
-The AAP's current child-centred guidance favours designs that support disengagement rather than maximising time on screen. Repeatability must therefore remain **parent-controlled, not child-controlled**. Reaching the goal ends the scored round and blocks further exercises. The app never auto-starts or silently resets; a new round only becomes available after a deliberate, PIN-protected redemption by a parent.
+The AAP's current child-centred guidance favours designs that support disengagement rather than maximising time on screen. Reaching the goal therefore ends the scored round and requires a deliberate collection and new reward choice. The app never auto-starts the next mission, uses streak pressure, or silently continues awarding points. Families retain control through the parent-defined catalogue and PIN-protected real-world redemption.
 
 ## 3. Core user experience
 
 ### Child loop
 
-1. **Home:** show the active round, for example “0 / 100 Punkte”, the configured reward, and one large start/continue button. If rewards were already redeemed today, show the count without treating it as a limit.
-2. **Choose:** select one of three visually distinct missions, for example Number Trail, Shape Workshop, or Market Day. All choices draw from the skills that need practice.
+1. **Home:** show the active round, for example “0 / 100 Punkte”, its chosen reward, and one large start/continue button. Link clearly to the reward collection.
+2. **Choose reward and mission:** select one parent-defined reward, then one of three visually distinct mission skins. Tasks come from the maths category attached to the reward.
 3. **Play:** one task at a time, large touch controls, optional read-aloud button, no persistent timer. The progress path visibly advances by 10 points for every completed task.
 4. **Learn from errors:** the first wrong answer gets “Fast—probier noch einmal”; the second reveals a relevant visual aid and a simpler nearby example. The child then resolves the original task.
-5. **Finish:** at the goal, show a calm celebration and a reward card: “Geschafft! Hol einen Erwachsenen.” Freeze the round and do not award additional points.
-6. **Redeem:** the parent enters a PIN. In one transaction, the app records the voucher, advances the round number, resets active points and completed-task IDs, and returns to the home screen.
-7. **Repeat:** home now shows 0 points and “Bereit für eine weitere Mission?”. Starting again uses a new round seed and can earn another voucher, even on the same date.
+5. **Finish and collect:** at the goal, show a calm celebration. The child collects an immutable reward snapshot; this advances the round and resets active points and completed-task IDs without a PIN.
+6. **Repeat:** the child may choose another catalogue reward immediately. A new round seed produces distinct tasks, even on the same date.
+7. **Redeem later:** the reward screen lists open and redeemed items. An adult enters the PIN to redeem one open item, which remains listed with status “Eingelöst”.
 
 ### Reward-round lifecycle
 
@@ -59,35 +59,36 @@ There is exactly one **active round** at a time. Calendar dates group attempts a
 
 | State | Entry condition | Child action | Parent action | Stored result |
 |---|---|---|---|---|
-| Active round | New day or previous voucher redeemed | Start/continue tasks | May change future reward settings | Current points and unique completed-task IDs |
-| Voucher ready | Active points reach the configured goal | View reward; no more scored tasks | Enter PIN to redeem | Completed round remains unchanged until approval |
-| Redeeming | Parent approval succeeds | Wait for return to home | Confirm redemption | Immutable redemption record with time, reward snapshot, points, and round number |
-| Fresh round | Redemption transaction completes | Start again immediately or later | No further action required | Round number increments; points and active task IDs reset |
+| Reward choice | No active round | Choose one parent-defined reward | Manage the catalogue | Selected reward ID and its category/goal |
+| Active round | Reward and mission skin selected | Start/continue tasks | May manage future reward options | Current points and unique completed-task IDs |
+| Reward ready | Active points reach the selected goal | Collect reward; no more scored tasks | No action required | Completed round remains unchanged until collection |
+| Collected | Child confirms collection | Choose another reward immediately | May redeem the collected item later | Immutable reward snapshot; round increments and progress resets |
+| Redeemed | Adult passes the PIN gate for an open item | View “Eingelöst” status | Confirm real-world redemption | Redemption timestamp added to the collected item |
 
 ### Point and reward rules
 
 - Each unique resolved challenge awards **10 points in the active round** exactly once, independent of mistakes. This makes the reward attainable and does not punish learning.
 - Default goal: **100 points / 10 completed challenges**, normally 8–12 minutes.
-- Parent-selectable goal: 50, 60, …, 200 points.
-- The reward is configurable text plus optional duration, e.g. “30 Minuten Gamen”.
+- Each catalogue option has a parent-selectable goal from 50, 60, …, 200 points and one maths category.
+- Each reward has configurable text plus optional duration, e.g. “15 Min. Comic lesen”.
 - Progress persists through refreshes and offline use. Reopening or using Back cannot duplicate points.
-- Reaching the goal locks the active round on the voucher screen. The child cannot discard it, reset it, or continue earning points around the parent gate.
-- Each completed voucher requires parent approval. Redemption stores a snapshot of the reward label, duration, points, date/time, and round number before starting a fresh round.
-- There is no software-imposed daily redemption maximum. Each additional voucher still requires completing the full goal and a separate parent approval.
-- Redemption is atomic: either the history entry and reset both persist, or neither does. Reloading during redemption must never duplicate a voucher or lose the completed round.
+- Reaching the goal locks the active round on the finish screen. Collecting stores the reward label, duration, category, points, date/time, and round number as a snapshot.
+- Collection immediately opens a fresh round and never requires a PIN. There is no software-imposed daily collection maximum.
+- Real-world redemption is separate and parent-approved. It changes only the selected collected item's status and never resets mission progress.
+- Collection and redemption transitions are idempotent: reloading or repeated actions cannot duplicate or lose a reward.
 - Challenge identifiers and deterministic generator seeds include the calendar date, round number, and task slot. A same-day restart therefore uses distinct task IDs and a newly varied mission.
-- Changing the goal or reward affects the active/future round; an already redeemed history entry keeps the reward text and duration that applied when it was redeemed.
+- Changing or removing a catalogue reward affects future choices; collected and redeemed items keep the exact snapshot earned at the time.
 - Accuracy, speed, and hint use do **not** affect the real-world reward. Response time may be kept locally for task selection but is never presented as pressure.
 
 ### Parent area
 
 Protected by a four-digit PIN and visually separate from child play:
 
-- set points goal and reward label/duration;
-- choose “current place in school” and enable/disable content families;
-- see current-round points/tasks, the number of rewards redeemed today, and a simple seven-day view of tasks, first-try success, hints, and skills needing review;
+- create/remove catalogue rewards with label, optional duration, point goal, and maths category;
+- enable/disable content families available to reward categories;
+- see current-round points/tasks, collected/open reward counts, and a simple seven-day view of tasks, first-try success, hints, and skills needing review;
 - toggle sound/read-aloud, reduced motion, higher contrast, and left-handed number-pad layout;
-- redeem the current voucher and retain a clear on-device audit entry for every round;
+- use the child reward screen to redeem a specific collected item and retain a clear on-device audit entry;
 - export/import an on-device JSON backup and reset data after confirmation.
 
 Do not label a child as “weak” or show red failure statistics. Use parent language such as “needs another look”, “learning”, and “secure”.
@@ -123,9 +124,9 @@ For each skill, store locally:
 
 Round selection:
 
-- 50% skills due for spaced review;
-- 30% current school topic;
-- 20% child choice or a gentle stretch task;
+- all tasks stay within the maths category of the reward chosen for the current round;
+- 65% prefer skills due for spaced review within that category;
+- 35% use other available skills from that category;
 - no identical challenge within 30 days when the generator has sufficient variety;
 - no more than three tasks of the same interaction in a row.
 
@@ -138,8 +139,10 @@ The algorithm should begin rule-based and explainable. Machine learning would ad
 Although it is a single-page application, use clear internal states/routes without page reloads:
 
 - `/` — child home and active round goal;
+- `/rewards` — child reward choice plus open/redeemed collection;
+- `/choose` — cosmetic mission-skin choice for the selected reward;
 - `/mission` — active task flow;
-- `/done` — voucher/finish state;
+- `/done` — collection/finish state;
 - `/parent` — parent-gated dashboard and settings.
 
 Key layout rules:
@@ -180,7 +183,7 @@ src/
   accessibility/       speech, motion, contrast helpers
 ```
 
-Important domain records are `Skill`, `Challenge`, `Attempt`, `MasteryState`, `DailyLedger`, `RewardSettings`, and `Redemption`. `DailyLedger` is a calendar grouping and active-round container, not a daily reward limit.
+Important domain records are `Skill`, `Challenge`, `Attempt`, `MasteryState`, `DailyLedger`, `RewardDefinition`, and `CollectedReward`. `DailyLedger` is a calendar grouping and active-round container, not a daily reward limit.
 
 The persisted reward shape is conceptually:
 
@@ -189,21 +192,26 @@ DailyLedger
   dateKey
   round                    current zero-based round number
   points                   points in the active round only
+  activeRewardId           selected catalogue option, or null between rounds
   awardedChallengeIds[]    duplicate-award guard for the active round
-  redemptions[]            immutable completed-voucher history for this date
 
-Redemption
+RewardDefinition
   id
-  round
-  points
-  redeemedAt
-  rewardLabel
-  rewardMinutes
+  label
+  minutes
+  pointsGoal
+  schoolTopic
+
+CollectedReward
+  id, rewardId, dateKey, round
+  collectedAt, redeemedAt
+  rewardLabel, rewardMinutes
+  points, schoolTopic
 ```
 
-Challenge generation is deterministic from `dateKey + round + task slot + skill + difficulty`. Refresh/retry therefore keeps the current question stable, while a redeemed same-day round receives distinct IDs and a different deterministic seed.
+Challenge generation is deterministic from `dateKey + round + task slot + skill + difficulty`. Refresh/retry therefore keeps the current question stable, while a collected same-day round receives distinct IDs and a different deterministic seed.
 
-Persistence migrations must preserve unfinished points. A legacy day that was already redeemed becomes redemption-history entry 1 plus a fresh round at 0 points; it must not remain permanently locked as “finished for today”.
+Persistence migrations must preserve unfinished points and attach the legacy global reward as its active reward. Legacy redemptions become already-redeemed collected items, while a legacy completed day receives a usable fresh round.
 
 ### Privacy and safety
 
@@ -218,19 +226,19 @@ Persistence migrations must preserve unfinished points. A legacy day that was al
 ### Phase 0 — alignment and paper prototype (2–3 days)
 
 - Confirm which edition and chapter the school currently uses.
-- Test the home → 10 tasks → parent redemption flow on paper with the child.
+- Test the reward choice → 10 tasks → child collection → later parent redemption flow on paper with the child.
 - Let the child choose the theme/mascot from two or three calm concepts.
 - Finalise original naming and copyright boundaries.
 
-Exit: parent and child understand the reward rule without explanation; current school topics are known.
+Exit: parent and child understand collection versus redemption without explanation; current school topics are known.
 
 ### Phase 1 — app foundation (4–5 days)
 
 - Scaffold the TypeScript SPA/PWA, responsive shell, offline cache, and local database.
-- Implement child home, mission state machine, parent gate/settings, active-round point ledger, calendar grouping, repeatable reward redemption, and migration from the former once-per-day model.
+- Implement child home, mission state machine, parent gate/settings, active-round point ledger, calendar grouping, child collection, later reward redemption, and migration from the former once-per-day model.
 - Add accessibility settings and install guidance for iOS/iPadOS and Android.
 
-Exit: a placeholder 10-task round reliably earns and redeems a reward across refresh/offline scenarios, resets to 0, and can start a second same-day round without losing the first redemption record.
+Exit: a placeholder 10-task round reliably collects a reward across refresh/offline scenarios, resets to 0, can start a second same-day round before redemption, and retains later redemption status.
 
 ### Phase 2 — arithmetic MVP (8–10 days)
 
@@ -247,11 +255,11 @@ Status: **implemented after the Phase 4 curriculum expansion**.
 - Added three child-selectable mission skins per round: Zahlenweg, Formenwerkstatt, and Markttag.
 - Added a responsive route map that advances once per resolved task, calm success motion, reduced-motion support, and optional quiet confirmation tones.
 - Added four cosmetic learning badges derived only from personal mastery evidence; badges never affect reward points or task access.
-- Added a seven-day parent overview of tasks, first-try success, visual-help use, redemptions, and supportive review suggestions.
+- Added a seven-day parent overview of tasks, first-try success, visual-help use, collected rewards, and supportive review suggestions.
 - Added explicit parent unlocks for quantities/stories, figures/symmetry, and conceptual multiplication/sharing.
-- Migrated the local schema to version 5 while preserving active points, mastery, settings, attempts, and reward history.
+- Migrated the local schema to version 6 while preserving active points, mastery, settings, attempts, and legacy reward history.
 
-Exit: the app feels playful, but every round still stops at the configured goal and another round requires parent redemption.
+Exit: the app feels playful, every round stops at its configured goal, and collection deliberately opens the next child-selected round without conflating it with real-world redemption.
 
 ### Phase 4 — broader Zahlenbuch coverage (8–10 days)
 
@@ -281,13 +289,15 @@ Estimated focused build time: **5–7 weeks for a polished family-use v1**, with
 The initial usable release is done when:
 
 - it installs or runs normally on current phone/tablet browsers and works offline after first load;
-- a parent can configure “100 points = 30 minutes gaming” (or another goal/reward) locally;
+- a parent can define a local catalogue including “15 minutes reading a comic = 100 points in Zahlen bis 100”;
+- the child can choose one catalogue option before a mission, whose category controls the skills used in that round;
 - exactly 10 resolved tasks reach the default goal, and refresh/back/retry cannot duplicate points;
-- reaching the goal freezes the round until a parent successfully passes the PIN gate;
-- every completed voucher can be parent-redeemed, is retained in history after restart, and immediately opens a fresh round at 0 points;
-- two complete rounds can be earned and redeemed on the same calendar day, producing two distinct redemption records;
+- reaching the goal freezes scoring until the child collects the reward, without requiring a PIN;
+- every collected reward is retained after restart, and collection immediately opens a fresh round at 0 points;
+- collected rewards remain individually parent-redeemable and listed afterward as “Eingelöst”;
+- two complete rounds can be collected on the same calendar day without either one first being redeemed;
 - a second same-day round uses distinct challenge IDs and cannot collide with the first round's duplicate-award guard;
-- reloading before or after redemption cannot duplicate a voucher, lose a voucher, or restore points that were already redeemed;
+- reloading before/after collection or redemption cannot duplicate a reward, lose it, or restore points from a collected round;
 - legacy once-per-day data migrates so redeemed rewards remain in history while the child receives a usable fresh round;
 - the adaptive session uses at least six arithmetic/number task families in the 0–100 range;
 - every wrong-answer path supplies a supportive, mathematically relevant visual strategy;
@@ -301,13 +311,13 @@ The initial usable release is done when:
 
 Keep these measures on-device and review them together with the parent; do not optimise for raw screen time.
 
-- The child independently finishes 4–5 short rounds per week; additional same-day rounds are parent-decided rather than prompted by the app.
+- The child independently finishes short rounds and can deliberately choose another parent-defined reward without artificial streak or autoplay prompts.
 - Median round time stays around 8–12 minutes.
 - More than 80% of started rounds end at the goal rather than being abandoned.
 - Hint use on reviewed skills trends down while first-try success trends up.
 - The child can explain at least one visual strategy, not merely type answers.
-- The parent can always tell how many vouchers were redeemed today and what reward each record represented.
-- There are no repeated disputes about whether a voucher was earned, already redeemed, or reset correctly.
+- The parent can always tell which rewards are collected, which remain open, and which were redeemed.
+- There are no repeated disputes about whether a reward was earned, already redeemed, or reset correctly.
 - After two weeks, the child still sometimes chooses a mission voluntarily; if not, revise the experience rather than raising rewards or adding pressure.
 
 ## 11. Risks and mitigations
@@ -321,8 +331,8 @@ Keep these measures on-device and review them together with the parent; do not o
 | Incorrect or ambiguous generated tasks | Pure generators, invariants/property tests, reviewed text templates, deterministic seeds. |
 | Copyright/trademark conflict | Original content and visuals, no scans/logos/copied wording, no implied publisher affiliation, pre-launch legal review. |
 | Device loss erases progress | Optional parent-controlled JSON export/import in v1; consider privacy-reviewed sync only if actually needed. |
-| Repeatable rewards create an uncontrolled loop | Every scored round ends at the voucher, blocks further tasks, and requires a fresh PIN-protected parent decision. The app never auto-starts the next round, advertises another reward, or adds streak pressure. |
-| Redemption resets or duplicates incorrectly | Treat history append, round increment, and active-progress reset as one state transition; test reloads and duplicate actions around that boundary. |
+| Repeatable rewards create an uncontrolled loop | Every scored round ends explicitly, the child must collect and choose again, and the available goals are parent-defined. The app never auto-starts the next round or adds streak pressure. |
+| Collection or redemption duplicates incorrectly | Treat collection (snapshot plus round reset) and later redemption (status timestamp) as separate idempotent transitions; test reloads and duplicate actions around both boundaries. |
 
 ## 12. Research sources
 

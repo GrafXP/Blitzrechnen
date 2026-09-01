@@ -1,5 +1,5 @@
 import { SKILLS, skillById } from '../curriculum/skills'
-import { currentLedger } from '../domain/data'
+import { activeRewardDefinition, activeSchoolTopic, currentLedger } from '../domain/data'
 import type { AppData, Challenge, MasteryState, SkillId } from '../domain/types'
 import { generateChallenge, hashString, randomFromSeed } from '../exercises/generators'
 
@@ -51,11 +51,13 @@ export function challengeForSession(
     .slice(-12)
     .map((attempt) => attempt.skillId!)
   const eligible = availableSkills(data)
-  const due = eligible.filter((skill) => isDue(data.mastery[skill.id], dateKey))
-  const currentTopic = eligible.filter((skill) => skill.topics.includes(data.settings.schoolTopic))
+  const currentTopic = (activeRewardDefinition(data, dateKey) ? SKILLS : eligible)
+    .filter((skill) => skill.topics.includes(activeSchoolTopic(data, dateKey)))
+  const topicEligible = currentTopic.length > 0 ? currentTopic : eligible
+  const due = topicEligible.filter((skill) => isDue(data.mastery[skill.id], dateKey))
   const roll = random()
-  let pool = roll < 0.5 ? due : roll < 0.8 ? currentTopic : eligible
-  if (pool.length === 0) pool = eligible
+  let pool = roll < 0.65 ? due : topicEligible
+  if (pool.length === 0) pool = topicEligible
 
   const unseenThisRound = pool.filter((skill) => !roundSkillIds.includes(skill.id))
   if (unseenThisRound.length) pool = unseenThisRound

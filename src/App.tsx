@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { usePersistentData } from './app/usePersistentData'
 import { useRoute } from './app/useRoute'
 import { useInstallPrompt } from './app/useInstallPrompt'
-import { currentLedger, hasReachedGoal } from './domain/data'
+import { activeRewardDefinition, currentLedger, hasReachedGoal } from './domain/data'
 import { zurichDateKey } from './domain/date'
 import { HomeScreen } from './child/HomeScreen'
 import { MissionPicker } from './child/MissionPicker'
 import { MissionScreen } from './child/MissionScreen'
 import { DoneScreen } from './child/DoneScreen'
+import { RewardScreen } from './child/RewardScreen'
 import { ParentScreen } from './parent/ParentScreen'
 import { InstallHelp } from './components/InstallHelp'
 import { ServiceWorkerStatus } from './components/ServiceWorkerStatus'
@@ -47,6 +48,7 @@ export default function App() {
 
   const dateKey = zurichDateKey()
   const ledger = currentLedger(data, dateKey)
+  const activeReward = activeRewardDefinition(data, dateKey)
   const reachedGoal = hasReachedGoal(data, dateKey)
   const appClassName = [
     'app',
@@ -58,7 +60,18 @@ export default function App() {
   let screen: React.ReactNode
   if (route === '/parent') {
     screen = <ParentScreen data={data} commit={commit} onHome={() => navigate('/')} />
-  } else if (route === '/choose' && !reachedGoal && ledger.points === 0) {
+  } else if (route === '/rewards') {
+    screen = (
+      <RewardScreen
+        data={data}
+        ledger={ledger}
+        dateKey={dateKey}
+        commit={commit}
+        onHome={() => navigate('/')}
+        onSelected={() => navigate('/choose')}
+      />
+    )
+  } else if (route === '/choose' && activeReward && !reachedGoal && ledger.points === 0) {
     screen = (
       <MissionPicker
         dateKey={dateKey}
@@ -68,7 +81,7 @@ export default function App() {
       />
     )
   } else if (route === '/mission') {
-    screen = ledger.missionSkin ? (
+    screen = activeReward && ledger.missionSkin ? (
       <MissionScreen
         data={data}
         ledger={ledger}
@@ -77,23 +90,24 @@ export default function App() {
         onExit={() => navigate('/')}
         onDone={() => navigate('/done')}
       />
-    ) : (
+    ) : activeReward ? (
       <MissionPicker
         dateKey={dateKey}
         commit={commit}
         onSelected={() => navigate('/mission')}
         onCancel={() => navigate('/')}
       />
-    )
+    ) : <RewardScreen data={data} ledger={ledger} dateKey={dateKey} commit={commit} onHome={() => navigate('/')} onSelected={() => navigate('/choose')} />
   } else if (route === '/done' && reachedGoal) {
-    screen = <DoneScreen data={data} ledger={ledger} dateKey={dateKey} commit={commit} onHome={() => navigate('/')} />
+    screen = <DoneScreen data={data} ledger={ledger} dateKey={dateKey} commit={commit} onCollected={() => navigate('/rewards')} />
   } else {
     screen = (
       <HomeScreen
         data={data}
         ledger={ledger}
         online={online}
-        onStart={() => navigate(reachedGoal ? '/done' : ledger.missionSkin ? '/mission' : '/choose')}
+        onStart={() => navigate(!activeReward ? '/rewards' : reachedGoal ? '/done' : ledger.missionSkin ? '/mission' : '/choose')}
+        onRewards={() => navigate('/rewards')}
         onParent={() => navigate('/parent')}
         onInstall={() => setInstallOpen(true)}
       />
